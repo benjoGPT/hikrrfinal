@@ -347,7 +347,7 @@ scene.add(edge);
 // ---------- the track: glowing bronze tube ----------
 const tpts=M.track.map(([u,v,e])=>new THREE.Vector3(worldX(u),worldY(elevUV(u,v))+0.12,worldZ(v)));
 const curve=new THREE.CatmullRomCurve3(tpts);
-const tubeGeo=new THREE.TubeGeometry(curve,1200,0.055,8,false);
+const tubeGeo=new THREE.TubeGeometry(curve,1200,0.045,8,false);
 // gradient colors along tube (computed, toggled)
 const gradColors=[];
 const segCount=tpts.length;
@@ -367,28 +367,35 @@ for(let i=0;i<tubePos;i++){
   const g=gradAt(ti); gradColors.push(g.r,g.g,g.b);
 }
 tubeGeo.setAttribute('color',new THREE.Float32BufferAttribute(gradColors,3));
-const tubeMatBronze=new THREE.MeshStandardMaterial({color:0xe8913c,emissive:0xe8913c,emissiveIntensity:0.6,roughness:0.3,metalness:0.55});
-const tubeMatGrad=new THREE.MeshStandardMaterial({vertexColors:true,emissive:0xffffff,emissiveIntensity:0.2,roughness:0.35,metalness:0.45});
-// a slow pulse of light travels along the route — a little life on the trail
+const tubeMatBronze=new THREE.MeshStandardMaterial({color:0xffc34d,emissive:0xffaa33,emissiveIntensity:0.85,roughness:0.28,metalness:0.55});
+const tubeMatGrad=new THREE.MeshStandardMaterial({vertexColors:true,emissive:0xffffff,emissiveIntensity:0.25,roughness:0.35,metalness:0.45});
+// a slow pulse of light travels along the route, and walked ground lights up in a different colour
 const flowUniform={value:0};
-function applyFlowShader(mat){
+const progressUniform={value:0};
+function applyTrailShader(mat){
   mat.onBeforeCompile=(shader)=>{
     shader.uniforms.uFlow=flowUniform;
-    shader.fragmentShader='uniform float uFlow;\n'+shader.fragmentShader;
+    shader.uniforms.uProgress=progressUniform;
+    shader.uniforms.uTraveled={value:new THREE.Color(0x57f0c4)};
+    shader.fragmentShader='uniform float uFlow;\nuniform float uProgress;\nuniform vec3 uTraveled;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
+      `#include <color_fragment>
+  float trailWalked = step(vUv.x, uProgress);`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>',
       `float flowPos = fract(vUv.x * 4.0 - uFlow);
   float flowPulse = (1.0 - smoothstep(0.0, 0.09, flowPos)) * smoothstep(0.0, 0.02, flowPos);
   gl_FragColor.rgb += flowPulse * 1.1 * vec3(1.0, 0.93, 0.8);
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, uTraveled, trailWalked * 0.7);
   #include <dithering_fragment>`);
   };
 }
-applyFlowShader(tubeMatBronze);
-applyFlowShader(tubeMatGrad);
+applyTrailShader(tubeMatBronze);
+applyTrailShader(tubeMatGrad);
 const tube=new THREE.Mesh(tubeGeo,tubeMatBronze);
 scene.add(tube);
 // soft glow underlay
-const glowGeo=new THREE.TubeGeometry(curve,600,0.1,8,false);
-const glowMat=new THREE.MeshBasicMaterial({color:0xe8913c,transparent:true,opacity:0.14});
+const glowGeo=new THREE.TubeGeometry(curve,600,0.085,8,false);
+const glowMat=new THREE.MeshBasicMaterial({color:0xffb84d,transparent:true,opacity:0.16});
 scene.add(new THREE.Mesh(glowGeo,glowMat));
 
 // ---------- summit pins ----------
@@ -816,6 +823,7 @@ function loop(t){
     controls.update();
   }
   if(!reduceMotion)flowUniform.value=(t*0.00015)%1;
+  progressUniform.value=flyT;
   if(frameN%labelInterval===0||flying||introActive)projectLabels();
   renderer.render(scene,camera);
 }
