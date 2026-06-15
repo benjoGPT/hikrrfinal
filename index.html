@@ -64,10 +64,32 @@
   .fly .play{width:34px;height:34px;border-radius:50%;background:var(--bronze);flex:none;
     display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 18px rgba(232,145,60,.4)}
   .fly .play svg{width:14px;height:14px;fill:var(--void)}
-  .track{flex:1;height:2px;background:rgba(240,236,225,.16);position:relative;border-radius:2px}
-  .track .fl{position:absolute;left:0;top:0;bottom:0;background:var(--bronze);border-radius:2px;width:0}
+  .track{flex:1;height:28px;position:relative}
+  .track::before{content:'';position:absolute;left:0;right:0;top:50%;height:2px;border-radius:2px;
+    background:rgba(240,236,225,.16);transform:translateY(-50%)}
+  .track .fl{position:absolute;left:0;top:50%;height:2px;background:var(--bronze);border-radius:2px;width:0;
+    transform:translateY(-50%);transition:width .2s ease}
   .track .kn{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;background:var(--paper);
-    transform:translate(-50%,-50%);left:0;box-shadow:0 0 10px rgba(232,145,60,.6)}
+    transform:translate(-50%,-50%);left:0;box-shadow:0 0 10px rgba(232,145,60,.6);
+    transition:left .2s ease,transform .15s ease,box-shadow .15s ease}
+  .track.drag .fl,.track.drag .kn{transition:none}
+  .track.drag .kn{transform:translate(-50%,-50%) scale(1.35);box-shadow:0 0 16px rgba(232,145,60,.85)}
+
+  /* summit inspect panel */
+  .panel{position:absolute;left:20px;right:20px;bottom:calc(env(safe-area-inset-bottom) + 156px);z-index:15;
+    max-width:340px;margin:0 auto;background:rgba(18,17,15,.74);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--line);border-radius:16px;padding:14px 18px;
+    transform:translateY(16px) scale(.97);opacity:0;pointer-events:none;
+    transition:transform .4s cubic-bezier(.22,1,.36,1),opacity .28s ease}
+  .panel.show{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
+  .panel .pclose{position:absolute;top:6px;right:6px;width:30px;height:30px;border:none;background:none;
+    color:var(--scree);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .panel .ptype{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--bronze)}
+  .panel h3{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin-top:5px;color:var(--paper);
+    letter-spacing:-.01em}
+  .panel .pstats{display:flex;gap:26px;margin-top:10px}
+  .panel .pstats .pv{font-size:17px;font-variant-numeric:tabular-nums;color:var(--paper);font-weight:600}
+  .panel .pstats .pl{font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--scree);margin-top:3px}
 
   .hint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 134px);z-index:9;
     text-align:center;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--scree);
@@ -124,6 +146,16 @@
   <div class="track" id="trk"><div class="fl" id="fl"></div><div class="kn" id="kn"></div></div>
 </div>
 <div class="hint" id="hint">Drag to orbit · pinch to zoom · press play to walk it</div>
+
+<div class="panel" id="panel">
+  <button class="pclose" id="panelClose" aria-label="Close">&times;</button>
+  <div class="ptype" id="panelType">Summit</div>
+  <h3 id="panelName">—</h3>
+  <div class="pstats">
+    <div><div class="pv" id="panelEle">—</div><div class="pl">Elevation</div></div>
+    <div><div class="pv" id="panelDist">—</div><div class="pl">Into route</div></div>
+  </div>
+</div>
 
 <div class="overlay" id="ov">
   <div class="ring">Milling terrain</div>
@@ -281,7 +313,8 @@ scene.add(new THREE.Mesh(glowGeo,glowMat));
 // ---------- summit pins ----------
 const pinGroup=new THREE.Group(); scene.add(pinGroup);
 const labels=[];
-M.pois.forEach(p=>{
+const pinHits=[]; // invisible larger hit targets for tap-to-inspect
+M.pois.forEach((p,idx)=>{
   const x=worldX(p.u),z=worldZ(p.v),y=worldY(elevUV(p.u,p.v));
   const summit=p.type==='Summit';
   const h=summit?0.5:0.34;
@@ -290,12 +323,17 @@ M.pois.forEach(p=>{
   stem.position.set(x,y+h/2,z);pinGroup.add(stem);
   const head=new THREE.Mesh(new THREE.SphereGeometry(summit?0.07:0.05,16,16),pinMat);
   head.position.set(x,y+h,z);pinGroup.add(head);
+  // enlarged invisible sphere = easier tap target on touch
+  const hit=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  hit.position.set(x,y+h,z);pinGroup.add(hit);
+  pinHits.push({mesh:hit,idx});
   const el=document.createElement('div');el.className='slab';
   el.innerHTML=`<div class="nm">${p.name}</div><div class="el" data-m="${p.ele}"></div><div class="stem"></div>`;
   if(!summit)el.querySelector('.nm').style.fontFamily="'Spline Sans Mono'",el.querySelector('.nm').style.fontSize='10px',el.querySelector('.nm').style.fontWeight='400';
   if(!reduceMotion)el.style.transform='translate(-50%,-100%) scale(0.6)';
   document.body.appendChild(el);
-  labels.push({el,pos:new THREE.Vector3(x,y+h+0.15,z),summit,ele:p.ele,name:p.name,revealed:reduceMotion});
+  labels.push({el,pos:new THREE.Vector3(x,y+h+0.15,z),summit,ele:p.ele,name:p.name,revealed:reduceMotion,
+    worldPos:new THREE.Vector3(x,y,z),type:p.type});
 });
 
 // ---------- lights ----------
@@ -348,6 +386,7 @@ addEventListener('resize',resize);resize();
 
 // ---------- stats ----------
 let totalKm=0,gain=0,maxE=-1e9;
+const cumKm=[];
 for(let i=0;i<M.track.length;i++){
   const e=M.track[i][2]; if(e>maxE)maxE=e;
   if(i>0){
@@ -356,6 +395,17 @@ for(let i=0;i<M.track.length;i++){
     totalKm+=Math.hypot(dx,dz)/1000;
     const de=b[2]-a[2]; if(de>0)gain+=de;
   }
+  cumKm.push(totalKm);
+}
+// nearest track point (and distance into route) for each POI
+function nearestTrackKm(u,v){
+  let best=0,bestD=Infinity;
+  for(let i=0;i<M.track.length;i++){
+    const du=M.track[i][0]-u, dv=M.track[i][1]-v;
+    const d=du*du+dv*dv;
+    if(d<bestD){bestD=d;best=i;}
+  }
+  return cumKm[best];
 }
 function setInst(mode,distKm,elev){
   if(mode==='total'){
@@ -379,7 +429,7 @@ setInst('total',totalKm);refreshLabels();
 document.querySelectorAll('#units button').forEach(b=>b.onclick=()=>{
   unit=b.dataset.u;document.querySelectorAll('#units button').forEach(x=>x.classList.toggle('on',x===b));
   if(flyT>0&&flyT<1)setInst('point',ptDist,ptEle);else setInst('total',totalKm);
-  refreshLabels();
+  refreshLabels();refreshPanel();
 });
 
 // ---------- gradient toggle ----------
@@ -401,6 +451,54 @@ function animateCam(toPos,toTgt){
     controls.update();if(s<1)requestAnimationFrame(st);})();
 }
 
+// ---------- summit inspect ----------
+const raycaster=new THREE.Raycaster();
+const pointerNDC=new THREE.Vector2();
+const panel=$('panel');
+let activePoi=null;
+function showPanel(idx){
+  activePoi=idx;
+  const l=labels[idx];
+  $('panelType').textContent=l.type;
+  $('panelName').textContent=l.name;
+  panel.classList.add('show');
+  refreshPanel();
+}
+function refreshPanel(){
+  if(activePoi===null)return;
+  const l=labels[activePoi];
+  $('panelEle').textContent=unit==='m'?l.ele+' m':Math.round(l.ele*M2FT)+' ft';
+  const km=nearestTrackKm(M.pois[activePoi].u,M.pois[activePoi].v);
+  $('panelDist').textContent=unit==='m'?km.toFixed(1)+' km':(km*KM2MI).toFixed(1)+' mi';
+}
+function closePanel(){activePoi=null;panel.classList.remove('show');}
+$('panelClose').onclick=closePanel;
+function inspectSummit(idx){
+  const l=labels[idx];
+  const camPos=l.worldPos.clone().add(new THREE.Vector3(2.6,1.7,2.6));
+  const tgt=l.worldPos.clone().add(new THREE.Vector3(0,0.3,0));
+  animateCam(camPos,tgt);
+  showPanel(idx);
+}
+let pdown=null;
+canvas.addEventListener('pointerdown',e=>{pdown={x:e.clientX,y:e.clientY,t:performance.now()};});
+canvas.addEventListener('pointerup',e=>{
+  if(!pdown)return;
+  const dx=e.clientX-pdown.x,dy=e.clientY-pdown.y,dt=performance.now()-pdown.t;
+  pdown=null;
+  if(introActive||flying||Math.hypot(dx,dy)>8||dt>500)return;
+  pointerNDC.x=(e.clientX/innerWidth)*2-1;
+  pointerNDC.y=-(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(pointerNDC,camera);
+  const hits=raycaster.intersectObjects(pinHits.map(h=>h.mesh));
+  if(hits.length){
+    const hit=pinHits.find(h=>h.mesh===hits[0].object);
+    inspectSummit(hit.idx);
+  }else if(activePoi!==null){
+    closePanel();
+  }
+});
+
 // ---------- flythrough ----------
 let flying=false,flyT=0,ptDist=0,ptEle=0;
 const meMat=new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xe8913c,emissiveIntensity:0.8,roughness:0.3});
@@ -412,9 +510,9 @@ $('play').onclick=()=>{if(flyT>=1)flyT=0;flying=!flying;picon();
   $('hint').style.opacity='0';me.visible=true;};
 const trk=$('trk');let drag=false;
 function scrubTo(cx){const r=trk.getBoundingClientRect();flyT=Math.max(0,Math.min(1,(cx-r.left)/r.width));flying=false;controls.enabled=true;picon();me.visible=true;updateFly();}
-trk.addEventListener('pointerdown',e=>{drag=true;scrubTo(e.clientX);});
+trk.addEventListener('pointerdown',e=>{drag=true;trk.classList.add('drag');scrubTo(e.clientX);});
 addEventListener('pointermove',e=>{if(drag)scrubTo(e.clientX);});
-addEventListener('pointerup',()=>drag=false);
+addEventListener('pointerup',()=>{drag=false;trk.classList.remove('drag');});
 
 function updateFly(){
   const pt=curve.getPointAt(flyT);
