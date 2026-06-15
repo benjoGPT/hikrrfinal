@@ -106,6 +106,11 @@
     text-align:center;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--scree);
     opacity:.55;pointer-events:none;transition:opacity .6s}
 
+  .styleToast{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 134px);z-index:12;
+    text-align:center;font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--bronze);
+    opacity:0;pointer-events:none;transition:opacity .35s ease}
+  .styleToast.show{opacity:1}
+
   /* summit label (HTML overlay tracked to 3D) */
   .slab{position:absolute;z-index:8;pointer-events:none;transform:translate(-50%,-100%);
     text-align:center;transition:opacity .3s;will-change:transform}
@@ -149,8 +154,10 @@
 <div class="rail">
   <div class="b on" id="bLight" title="Spin light"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
   <div class="b" id="bGrad" title="Colour by gradient"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 5-8 4 5"/></svg></div>
+  <div class="b" id="bLayer" title="Map style"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/></svg></div>
   <div class="b" id="bReset" title="Reset view"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9M3 12l-1-4M3 12l4-1"/></svg></div>
 </div>
+<div class="styleToast" id="styleToast"></div>
 
 <div class="fly">
   <div class="play" id="play"><svg id="pic" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
@@ -234,47 +241,80 @@ function worldY(elev){return (elev-M.emin)*HSCALE;}
 const geo=new THREE.PlaneGeometry(MODEL_W,MODEL_D,GW-1,GH-1);
 geo.rotateX(-Math.PI/2);
 const pos=geo.attributes.position;
-const colA=[];
-const stone=new THREE.Color(0x9b9488), low=new THREE.Color(0x6f6a60), high=new THREE.Color(0xc8c2b4);
+// multi-stop colour ramps for the alternate map styles
+function multiLerp(stops,t){
+  t=Math.min(1,Math.max(0,t));
+  const n=stops.length-1;
+  const seg=Math.min(n-1,Math.floor(t*n));
+  return stops[seg].clone().lerp(stops[seg+1],t*n-seg);
+}
+const low=new THREE.Color(0x6f6a60), high=new THREE.Color(0xc8c2b4);
+const topoStops=[new THREE.Color(0x3c4a30),new THREE.Color(0x6e7a3f),new THREE.Color(0xb9a45e),new THREE.Color(0xe9ddc2)];
+const thermalStops=[new THREE.Color(0x2a4d8f),new THREE.Color(0x3fa6a0),new THREE.Color(0x8fbf4a),new THREE.Color(0xe8c23c),new THREE.Color(0xcf4a3a)];
+const slateStops=[new THREE.Color(0x10151f),new THREE.Color(0x223044),new THREE.Color(0x3c5570),new THREE.Color(0x9fd4e6)];
+const colStone=[],colTopo=[],colThermal=[],colSlate=[];
 for(let i=0;i<pos.count;i++){
   const ix=i%GW, iy=Math.floor(i/GW);
   const e=demAt(ix,iy);
   pos.setY(i,worldY(e));
   const t=(e-M.emin)/eRange;
-  const col=low.clone().lerp(high,Math.pow(t,0.85));
-  colA.push(col.r,col.g,col.b);
+  const cStone=low.clone().lerp(high,Math.pow(t,0.85));
+  colStone.push(cStone.r,cStone.g,cStone.b);
+  const cTopo=multiLerp(topoStops,t);
+  colTopo.push(cTopo.r,cTopo.g,cTopo.b);
+  const cThermal=multiLerp(thermalStops,Math.pow(t,0.9));
+  colThermal.push(cThermal.r,cThermal.g,cThermal.b);
+  const cSlate=multiLerp(slateStops,t);
+  colSlate.push(cSlate.r,cSlate.g,cSlate.b);
 }
-geo.setAttribute('color',new THREE.Float32BufferAttribute(colA,3));
+const colorSets={
+  stone:new THREE.Float32BufferAttribute(colStone,3),
+  topo:new THREE.Float32BufferAttribute(colTopo,3),
+  thermal:new THREE.Float32BufferAttribute(colThermal,3),
+  slate:new THREE.Float32BufferAttribute(colSlate,3)
+};
+geo.setAttribute('color',colorSets.stone);
 geo.computeVertexNormals();
-const terrainMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96,metalness:0.02,flatShading:false});
+
 // reveal uniform: terrain rises out of the slab on first load
 const revealUniform={value:reduceMotion?1:0};
 // contour band period in world units (~50m real-world interval)
 const CONTOUR_FREQ=2.43;
-terrainMat.onBeforeCompile=(shader)=>{
-  shader.uniforms.uReveal=revealUniform;
-  const varyings='varying float vWorldY;\nvarying vec3 vRimN;\nvarying vec3 vRimV;\n';
-  shader.vertexShader=('uniform float uReveal;\n'+varyings)+shader.vertexShader;
-  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-    `#include <begin_vertex>
+// shared shader injection: reveal animation + fresnel rim, optional engraved contours
+function applyTerrainShader(mat,{contour}){
+  mat.onBeforeCompile=(shader)=>{
+    shader.uniforms.uReveal=revealUniform;
+    const varyings='varying float vWorldY;\nvarying vec3 vRimN;\nvarying vec3 vRimV;\n';
+    shader.vertexShader=('uniform float uReveal;\n'+varyings)+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
+      `#include <begin_vertex>
   transformed.y *= uReveal;
   vWorldY = transformed.y;
   vRimN = normalize(normalMatrix * normal);
   vRimV = normalize(-(modelViewMatrix * vec4(transformed,1.0)).xyz);`);
-  shader.fragmentShader=varyings+shader.fragmentShader;
-  // subtle engraved contour bands, milled-stone terracing
-  shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
-    `#include <color_fragment>
+    shader.fragmentShader=varyings+shader.fragmentShader;
+    if(contour){
+      // subtle engraved contour bands, milled-stone terracing
+      shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
+        `#include <color_fragment>
   float contourPos = vWorldY * ${CONTOUR_FREQ.toFixed(3)};
   float contourD = abs(contourPos - floor(contourPos+0.5));
   float contourLine = 1.0 - smoothstep(0.0, 0.025, contourD);
   diffuseColor.rgb *= (1.0 - contourLine*0.12);`);
-  // faint fresnel rim light — keeps the stone reading as a physical object
-  shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>',
-    `float rimFresnel = pow(1.0 - max(dot(normalize(vRimN), normalize(vRimV)), 0.0), 3.0);
+    }
+    // faint fresnel rim light — keeps the surface reading as a physical object
+    shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>',
+      `float rimFresnel = pow(1.0 - max(dot(normalize(vRimN), normalize(vRimV)), 0.0), 3.0);
   gl_FragColor.rgb += rimFresnel * 0.05 * vec3(0.97,0.94,0.88);
   #include <dithering_fragment>`);
-};
+  };
+}
+const terrainMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96,metalness:0.02,flatShading:false});
+applyTerrainShader(terrainMat,{contour:true});
+// satellite material: real-world imagery draped over the same relief
+const satelliteMat=new THREE.MeshStandardMaterial({roughness:0.92,metalness:0.02,flatShading:false});
+applyTerrainShader(satelliteMat,{contour:false});
+
 const terrain=new THREE.Mesh(geo,terrainMat);
 terrain.castShadow=true;terrain.receiveShadow=true;
 scene.add(terrain);
@@ -450,6 +490,84 @@ document.querySelectorAll('#units button').forEach(b=>b.onclick=()=>{
 let gradOn=false;
 $('bGrad').onclick=function(){gradOn=!gradOn;this.classList.toggle('on',gradOn);
   tube.material=gradOn?tubeMatGrad:tubeMatBronze;tube.material.needsUpdate=true;};
+
+// ---------- map style cycle ----------
+const STYLES=['stone','topo','thermal','slate','satellite'];
+const STYLE_NAMES={stone:'Milled stone',topo:'Topographic',thermal:'Thermal',slate:'Slate',satellite:'Satellite'};
+let styleIdx=0,satTexture=null;
+const styleToast=$('styleToast');
+let styleToastT=null;
+function showStyleToast(text){
+  styleToast.textContent=text;
+  styleToast.classList.add('show');
+  clearTimeout(styleToastT);
+  styleToastT=setTimeout(()=>styleToast.classList.remove('show'),1400);
+}
+function applyStyle(name){
+  if(name==='satellite'){
+    terrain.material=satelliteMat;
+  }else{
+    terrain.material=terrainMat;
+    geo.setAttribute('color',colorSets[name]);
+  }
+  showStyleToast(STYLE_NAMES[name]);
+}
+// satellite imagery via ESRI World Imagery (public tile service, CORS-enabled)
+function lon2px(lon,z){return (lon+180)/360*Math.pow(2,z)*256;}
+function lat2px(lat,z){const r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z)*256;}
+function loadSatelliteTexture(){
+  if(satTexture)return Promise.resolve(satTexture);
+  return new Promise((resolve,reject)=>{
+    let z=14;
+    while((lon2px(M.east,z)-lon2px(M.west,z))>1024&&z>8)z--;
+    while((lon2px(M.east,z)-lon2px(M.west,z))<512&&z<18)z++;
+    const px0=lon2px(M.west,z),px1=lon2px(M.east,z);
+    const py0=lat2px(M.north,z),py1=lat2px(M.south,z);
+    const tx0=Math.floor(px0/256),tx1=Math.floor(px1/256);
+    const ty0=Math.floor(py0/256),ty1=Math.floor(py1/256);
+    const cols=tx1-tx0+1,rows=ty1-ty0+1;
+    const canvas=document.createElement('canvas');
+    canvas.width=cols*256;canvas.height=rows*256;
+    const ctx=canvas.getContext('2d');
+    let pending=cols*rows,failed=false;
+    for(let ty=ty0;ty<=ty1;ty++)for(let tx=tx0;tx<=tx1;tx++){
+      const img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=()=>{ctx.drawImage(img,(tx-tx0)*256,(ty-ty0)*256);if(--pending===0)finish();};
+      img.onerror=()=>{failed=true;if(--pending===0)finish();};
+      img.src=`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${ty}/${tx}`;
+    }
+    function finish(){
+      if(failed)return reject(new Error('tile load failed'));
+      const out=document.createElement('canvas');
+      out.width=1024;out.height=Math.round(1024*(py1-py0)/(px1-px0));
+      try{
+        out.getContext('2d').drawImage(canvas,px0-tx0*256,py0-ty0*256,px1-px0,py1-py0,0,0,out.width,out.height);
+      }catch(e){return reject(e);}
+      const tex=new THREE.CanvasTexture(out);
+      if('colorSpace' in tex)tex.colorSpace=THREE.SRGBColorSpace;
+      satTexture=tex;
+      resolve(tex);
+    }
+  });
+}
+$('bLayer').onclick=async function(){
+  const nextIdx=(styleIdx+1)%STYLES.length;
+  const next=STYLES[nextIdx];
+  if(next==='satellite'){
+    showStyleToast('Loading satellite…');
+    try{
+      const tex=await loadSatelliteTexture();
+      satelliteMat.map=tex;satelliteMat.needsUpdate=true;
+      styleIdx=nextIdx;applyStyle(next);
+    }catch(e){
+      console.warn('Satellite imagery unavailable',e);
+      styleIdx=(nextIdx+1)%STYLES.length;applyStyle(STYLES[styleIdx]);
+    }
+  }else{
+    styleIdx=nextIdx;applyStyle(next);
+  }
+};
 
 // ---------- light spin ----------
 let lightSpin=true;
