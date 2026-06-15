@@ -740,9 +740,23 @@ let flying=false,flyT=0,ptDist=0,ptEle=0;
 // celebrate each summit as the flythrough passes it
 const poiFrac=M.pois.map((p,i)=>labels[i].summit?nearestTrackKm(p.u,p.v)/totalKm:-1);
 let notified=new Set();
-const meMat=new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xe8913c,emissiveIntensity:0.8,roughness:0.3});
-const me=new THREE.Mesh(new THREE.SphereGeometry(0.1,16,16),meMat);
+const meMat=new THREE.MeshStandardMaterial({color:0xfff4dd,emissive:0x57f0c4,emissiveIntensity:1.5,roughness:0.15,metalness:0.6});
+const me=new THREE.Mesh(new THREE.SphereGeometry(0.085,20,20),meMat);
 me.visible=false;scene.add(me);
+// soft glowing halo behind the marker, for a brighter, more deluxe presence
+const haloCanvas=document.createElement('canvas');haloCanvas.width=128;haloCanvas.height=128;
+const haloCtx=haloCanvas.getContext('2d');
+const haloGrad=haloCtx.createRadialGradient(64,64,0,64,64,64);
+haloGrad.addColorStop(0,'rgba(255,244,221,0.95)');
+haloGrad.addColorStop(0.35,'rgba(87,240,196,0.5)');
+haloGrad.addColorStop(1,'rgba(87,240,196,0)');
+haloCtx.fillStyle=haloGrad;haloCtx.fillRect(0,0,128,128);
+const haloMat=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(haloCanvas),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+const meHalo=new THREE.Sprite(haloMat);
+meHalo.visible=false;scene.add(meHalo);
+// a small travelling light to cast the marker's glow onto the terrain
+const meLight=new THREE.PointLight(0x8af5d6,0,3);
+meLight.visible=false;scene.add(meLight);
 function picon(){$('play').classList.toggle('on',flying);}
 $('play').onclick=()=>{if(flyT>=1){flyT=0;notified.clear();}flying=!flying;picon();
   controls.enabled=!flying;
@@ -840,6 +854,19 @@ function loop(t){
   }
   if(!reduceMotion)flowUniform.value=(t*0.00015)%1;
   progressUniform.value=flyT;
+  if(me.visible){
+    const pulse=reduceMotion?1:0.85+0.15*Math.sin(t*0.006);
+    me.scale.setScalar(pulse);
+    meHalo.position.copy(me.position);
+    meHalo.scale.set(0.6*pulse,0.6*pulse,1);
+    meHalo.visible=true;
+    meLight.position.copy(me.position);
+    meLight.intensity=1.2*pulse;
+    meLight.visible=true;
+  }else{
+    meHalo.visible=false;
+    meLight.visible=false;
+  }
   if(frameN%labelInterval===0||flying||introActive)projectLabels();
   renderer.render(scene,camera);
 }
