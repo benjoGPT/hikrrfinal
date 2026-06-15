@@ -1,0 +1,14 @@
+{
+  "name": "Shire Steppers — Carneddau Circular",
+  "short_name": "Shire Steppers",
+  "description": "Interactive 3D satellite map of a real Carneddau hike — Carnedd Dafydd, Llewelyn, Yr Elen & Pen yr Ole Wen.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12110f",
+  "theme_color": "#12110f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
