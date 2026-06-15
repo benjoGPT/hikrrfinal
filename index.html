@@ -203,21 +203,35 @@ geo.computeVertexNormals();
 const terrainMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96,metalness:0.02,flatShading:false});
 // reveal uniform: terrain rises out of the slab on first load
 const revealUniform={value:reduceMotion?1:0};
+// contour band period in world units (~50m real-world interval)
+const CONTOUR_FREQ=2.43;
 terrainMat.onBeforeCompile=(shader)=>{
   shader.uniforms.uReveal=revealUniform;
-  shader.vertexShader='uniform float uReveal;\nvarying float vWorldY;\n'+shader.vertexShader;
+  const varyings='varying float vWorldY;\nvarying vec3 vRimN;\nvarying vec3 vRimV;\n';
+  shader.vertexShader=('uniform float uReveal;\n'+varyings)+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-    '#include <begin_vertex>\n  transformed.y *= uReveal;\n  vWorldY = transformed.y;');
-  shader.fragmentShader='varying float vWorldY;\n'+shader.fragmentShader;
+    `#include <begin_vertex>
+  transformed.y *= uReveal;
+  vWorldY = transformed.y;
+  vRimN = normalize(normalMatrix * normal);
+  vRimV = normalize(-(modelViewMatrix * vec4(transformed,1.0)).xyz);`);
+  shader.fragmentShader=varyings+shader.fragmentShader;
+  // subtle engraved contour bands, milled-stone terracing
+  shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
+    `#include <color_fragment>
+  float contourPos = vWorldY * ${CONTOUR_FREQ.toFixed(3)};
+  float contourD = abs(contourPos - floor(contourPos+0.5));
+  float contourLine = 1.0 - smoothstep(0.0, 0.025, contourD);
+  diffuseColor.rgb *= (1.0 - contourLine*0.12);`);
+  // faint fresnel rim light — keeps the stone reading as a physical object
+  shader.fragmentShader=shader.fragmentShader.replace('#include <dithering_fragment>',
+    `float rimFresnel = pow(1.0 - max(dot(normalize(vRimN), normalize(vRimV)), 0.0), 3.0);
+  gl_FragColor.rgb += rimFresnel * 0.05 * vec3(0.97,0.94,0.88);
+  #include <dithering_fragment>`);
 };
 const terrain=new THREE.Mesh(geo,terrainMat);
 terrain.castShadow=true;terrain.receiveShadow=true;
 scene.add(terrain);
-
-// contour banding via a second wireframe-ish overlay (subtle isolines)
-const contourGeo=geo.clone();
-const cMat=new THREE.MeshBasicMaterial({color:0x000000,wireframe:true,transparent:true,opacity:0.05});
-scene.add(new THREE.Mesh(contourGeo,cMat));
 
 // ---------- base slab (the "milled block") ----------
 const slabH=worldY(M.emin)-0.6;
