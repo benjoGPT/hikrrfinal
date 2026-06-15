@@ -62,9 +62,25 @@
   /* flythrough scrubber — bottom, thin */
   .fly{position:absolute;left:20px;right:20px;bottom:calc(env(safe-area-inset-bottom) + 104px);z-index:11;
     display:flex;align-items:center;gap:12px}
-  .fly .play{width:34px;height:34px;border-radius:50%;background:var(--bronze);flex:none;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 18px rgba(232,145,60,.4)}
-  .fly .play svg{width:14px;height:14px;fill:var(--void)}
+  .fly .play{position:relative;width:42px;height:17px;border-radius:9px;flex:none;cursor:pointer;
+    background:linear-gradient(100deg,#ece1cb 0%,#d8cbb0 55%,#c2a878 100%);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.5),inset 0 -1px 2px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.35);
+    transform:rotate(-18deg);transition:transform .15s}
+  .fly .play:active{transform:rotate(-18deg) scale(.92)}
+  .fly .play .ember{position:absolute;right:-2px;top:50%;transform:translateY(-50%);width:9px;height:9px;
+    border-radius:50%;background:radial-gradient(circle,#fff2cf 0%,var(--bronze) 55%,#7a2e0a 100%);
+    box-shadow:0 0 6px 1px rgba(232,145,60,.6);transition:box-shadow .3s,background .3s}
+  .fly .play.on .ember{box-shadow:0 0 14px 3px rgba(255,160,60,.95);background:radial-gradient(circle,#fff8e0 0%,#ffb347 50%,#9c3a0a 100%)}
+  .fly .play .smoke{position:absolute;right:1px;top:-1px;width:3px;height:3px;border-radius:50%;
+    background:rgba(235,235,235,.8);opacity:0}
+  .fly .play.on .smoke{animation:smokeRise 1.8s ease-out infinite}
+  .fly .play.on .smoke:nth-child(3){animation-delay:.6s}
+  .fly .play.on .smoke:nth-child(4){animation-delay:1.2s}
+  @keyframes smokeRise{
+    0%{opacity:0;transform:translate(0,0) scale(.5)}
+    18%{opacity:.5}
+    100%{opacity:0;transform:translate(9px,-22px) scale(1.8)}
+  }
   .track{flex:1;height:28px;position:relative}
   .track::before{content:'';position:absolute;left:0;right:0;top:50%;height:2px;border-radius:2px;
     background:rgba(240,236,225,.16);transform:translateY(-50%)}
@@ -171,7 +187,7 @@
 <div class="styleToast" id="styleToast"></div>
 
 <div class="fly">
-  <div class="play" id="play"><svg id="pic" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+  <div class="play" id="play"><span class="ember"></span><span class="smoke"></span><span class="smoke"></span><span class="smoke"></span></div>
   <div class="track" id="trk"><div class="fl" id="fl"></div><div class="kn" id="kn"></div></div>
 </div>
 <div class="hint" id="hint">Drag to orbit · pinch to zoom · press play to walk it</div>
@@ -367,7 +383,7 @@ for(let i=0;i<tubePos;i++){
   const g=gradAt(ti); gradColors.push(g.r,g.g,g.b);
 }
 tubeGeo.setAttribute('color',new THREE.Float32BufferAttribute(gradColors,3));
-const tubeMatBronze=new THREE.MeshStandardMaterial({color:0xffc34d,emissive:0xffaa33,emissiveIntensity:0.85,roughness:0.28,metalness:0.55});
+const tubeMatBronze=new THREE.MeshStandardMaterial({color:0xffc34d,emissive:0xffaa33,emissiveIntensity:1.3,roughness:0.28,metalness:0.55});
 const tubeMatGrad=new THREE.MeshStandardMaterial({vertexColors:true,emissive:0xffffff,emissiveIntensity:0.25,roughness:0.35,metalness:0.45});
 // a slow pulse of light travels along the route, and walked ground lights up in a different colour
 const flowUniform={value:0};
@@ -395,7 +411,7 @@ const tube=new THREE.Mesh(tubeGeo,tubeMatBronze);
 scene.add(tube);
 // soft glow underlay
 const glowGeo=new THREE.TubeGeometry(curve,600,0.085,8,false);
-const glowMat=new THREE.MeshBasicMaterial({color:0xffb84d,transparent:true,opacity:0.16});
+const glowMat=new THREE.MeshBasicMaterial({color:0xffb84d,transparent:true,opacity:0.32});
 scene.add(new THREE.Mesh(glowGeo,glowMat));
 
 // ---------- summit pins ----------
@@ -727,7 +743,7 @@ let notified=new Set();
 const meMat=new THREE.MeshStandardMaterial({color:0xffd9a0,emissive:0xe8913c,emissiveIntensity:0.8,roughness:0.3});
 const me=new THREE.Mesh(new THREE.SphereGeometry(0.1,16,16),meMat);
 me.visible=false;scene.add(me);
-function picon(){$('pic').innerHTML=flying?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';}
+function picon(){$('play').classList.toggle('on',flying);}
 $('play').onclick=()=>{if(flyT>=1){flyT=0;notified.clear();}flying=!flying;picon();
   controls.enabled=!flying;
   $('hint').style.opacity='0';me.visible=true;};
