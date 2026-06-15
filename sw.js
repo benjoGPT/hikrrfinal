@@ -1,4 +1,4 @@
-const CACHE='shire-steppers-v3';
+const CACHE='shire-steppers-v4';
 const SHELL=['./index.html','./model.js','./manifest.json',
   'https://unpkg.com/three@0.160.0/build/three.module.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL.map(u=>new Request(u,{mode:'cors'})))).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting()));});
