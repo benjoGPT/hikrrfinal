@@ -42,7 +42,7 @@ export default function MapPage() {
 
   const [drawing, setDrawing] = useState(false)
   const [coordinates, setCoordinates] = useState<[number, number][]>([])
-  const [styleMode, setStyleMode] = useState<'outdoors' | 'satellite'>('outdoors')
+  const [styleMode, setStyleMode] = useState<'outdoors' | 'satellite'>('satellite')
   const [showSaveModal, setShowSaveModal] = useState(false)
   const [saveForm, setSaveForm] = useState({ title: '', description: '', date: new Date().toISOString().split('T')[0] })
   const [saving, setSaving] = useState(false)
@@ -132,10 +132,10 @@ export default function MapPage() {
 
       map = new mapboxgl.Map({
         container: mapContainer.current!,
-        style: 'mapbox://styles/mapbox/outdoors-v12',
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
         center: [-3.78, 52.13],
-        zoom: 7,
-        pitch: 50,
+        zoom: 8,
+        pitch: 65,
         bearing: -20,
       })
 
@@ -149,13 +149,23 @@ export default function MapPage() {
           tileSize: 512,
           maxzoom: 14,
         })
-        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 })
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 2.5 })
         map.setFog({
-          color: 'rgb(186, 210, 235)',
-          'high-color': 'rgb(36, 92, 223)',
-          'horizon-blend': 0.02,
-          'space-color': 'rgb(11, 11, 25)',
-          'star-intensity': 0.6,
+          color: 'rgb(220, 230, 240)',
+          'high-color': 'rgb(40, 80, 200)',
+          'horizon-blend': 0.04,
+          'space-color': 'rgb(5, 5, 20)',
+          'star-intensity': 0.8,
+        })
+        // Sky layer for realistic atmosphere
+        map.addLayer({
+          id: 'sky',
+          type: 'sky',
+          paint: {
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-sun': [0.0, 90.0],
+            'sky-atmosphere-sun-intensity': 15,
+          },
         })
 
         // Add route source + layer
