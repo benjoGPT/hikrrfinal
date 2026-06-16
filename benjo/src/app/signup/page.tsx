@@ -18,7 +18,7 @@ export default function SignupPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: name } },
+      options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/auth/callback` },
     })
     if (error) { setError(error.message); setLoading(false); return }
     setDone(true)
