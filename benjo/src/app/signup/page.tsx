@@ -18,7 +18,7 @@ export default function SignupPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: name } },
+      options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/auth/callback` },
     })
     if (error) { setError(error.message); setLoading(false); return }
     setDone(true)
@@ -56,6 +56,9 @@ export default function SignupPage() {
               Already have an account?{' '}
               <Link href="/login" className="text-[#e8702a] no-underline hover:underline">Sign in</Link>
             </p>
+            <Link href="/dashboard" className="block text-center text-white/40 hover:text-white/70 text-xs mt-1 transition-colors no-underline">
+              Continue as guest →
+            </Link>
           </form>
         )}
       </div>

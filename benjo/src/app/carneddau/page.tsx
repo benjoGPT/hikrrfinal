@@ -1,9 +1,12 @@
+import Nav from '@/components/Nav'
+
 export default function CarneddauPage() {
   return (
-    <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden' }}>
+    <div className="relative w-full bg-black" style={{ height: '100dvh' }}>
+      <Nav />
       <iframe
         src="/carneddau-map/index.html"
-        style={{ width: '100%', height: '100%', border: 'none' }}
+        className="absolute inset-0 w-full h-full border-0"
         title="Carneddau 3D Map"
         allowFullScreen
       />
