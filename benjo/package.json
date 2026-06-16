@@ -25,9 +25,5 @@
     "react-dom": "19.2.4",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "devDependencies": {
-    "@types/mapbox-gl": "^3.0.0",
-    "@types/mapbox__mapbox-gl-draw": "^1.4.0"
   }
 }
