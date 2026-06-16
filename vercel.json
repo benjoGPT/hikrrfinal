@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd lithos && npm install && npm run build",
+  "outputDirectory": "lithos/dist",
+  "installCommand": "echo skip"
+}
