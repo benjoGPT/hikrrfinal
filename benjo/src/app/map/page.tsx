@@ -135,11 +135,29 @@ export default function MapPage() {
         style: 'mapbox://styles/mapbox/outdoors-v12',
         center: [-3.78, 52.13],
         zoom: 7,
+        pitch: 50,
+        bearing: -20,
       })
 
       mapRef.current = map
 
       map.on('load', () => {
+        // 3D terrain
+        map.addSource('mapbox-dem', {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+          tileSize: 512,
+          maxzoom: 14,
+        })
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 })
+        map.setFog({
+          color: 'rgb(186, 210, 235)',
+          'high-color': 'rgb(36, 92, 223)',
+          'horizon-blend': 0.02,
+          'space-color': 'rgb(11, 11, 25)',
+          'star-intensity': 0.6,
+        })
+
         // Add route source + layer
         map.addSource('route', {
           type: 'geojson',
@@ -318,13 +336,37 @@ export default function MapPage() {
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
 
       {/* Style toggle — top right below nav */}
-      <button
-        onClick={toggleStyle}
-        className="absolute top-20 right-4 z-50 px-3 py-2 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all"
-        style={{ background: 'rgba(0,0,0,0.75)', color: '#e8702a', border: '1px solid rgba(232,112,42,0.4)', backdropFilter: 'blur(8px)' }}
-      >
-        {styleMode === 'outdoors' ? '🛰 Satellite' : '🗺 Outdoors'}
-      </button>
+      <div className="absolute top-20 right-4 z-50 flex flex-col gap-2">
+        <button
+          onClick={toggleStyle}
+          className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all"
+          style={{ background: 'rgba(0,0,0,0.75)', color: '#e8702a', border: '1px solid rgba(232,112,42,0.4)', backdropFilter: 'blur(8px)' }}
+        >
+          {styleMode === 'outdoors' ? '🛰 Satellite' : '🗺 Outdoors'}
+        </button>
+        <button
+          onClick={() => {
+            const map = mapRef.current
+            if (!map) return
+            map.easeTo({ pitch: 50, bearing: -20, duration: 800 })
+          }}
+          className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all"
+          style={{ background: 'rgba(0,0,0,0.75)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+        >
+          ⛰ 3D View
+        </button>
+        <button
+          onClick={() => {
+            const map = mapRef.current
+            if (!map) return
+            map.easeTo({ pitch: 0, bearing: 0, duration: 800 })
+          }}
+          className="px-3 py-2 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all"
+          style={{ background: 'rgba(0,0,0,0.75)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+        >
+          🗺 Top Down
+        </button>
+      </div>
 
       {/* Left sidebar */}
       <div
