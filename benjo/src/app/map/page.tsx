@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { createClient } from '@/lib/supabase/client'
 
-export default function MapPage() {
+function MapInner() {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const searchParams = useSearchParams()
   const routeId = searchParams.get('route')
@@ -48,7 +48,6 @@ export default function MapPage() {
     return () => window.removeEventListener('message', handleMessage)
   }, [])
 
-  // Once iframe loads, send any route ID from URL so the map can display it
   const handleIframeLoad = async () => {
     if (!routeId || !iframeRef.current?.contentWindow) return
     const supabase = createClient()
@@ -67,16 +66,24 @@ export default function MapPage() {
   }
 
   return (
+    <iframe
+      ref={iframeRef}
+      src="/cesium-map/index.html"
+      className="absolute inset-0 w-full h-full border-0"
+      title="Wales 3D Map"
+      allowFullScreen
+      onLoad={handleIframeLoad}
+    />
+  )
+}
+
+export default function MapPage() {
+  return (
     <div className="relative w-full bg-black" style={{ height: '100dvh' }}>
       <Nav />
-      <iframe
-        ref={iframeRef}
-        src="/cesium-map/index.html"
-        className="absolute inset-0 w-full h-full border-0"
-        title="Wales 3D Map"
-        allowFullScreen
-        onLoad={handleIframeLoad}
-      />
+      <Suspense>
+        <MapInner />
+      </Suspense>
     </div>
   )
 }
