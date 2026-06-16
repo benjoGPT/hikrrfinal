@@ -1,15 +1,5 @@
-import Nav from '@/components/Nav'
+import { redirect } from 'next/navigation'
 
-export default function CarneddauPage() {
-  return (
-    <div className="relative w-full bg-black" style={{ height: '100dvh' }}>
-      <Nav />
-      <iframe
-        src="/carneddau-map/index.html"
-        className="absolute inset-0 w-full h-full border-0"
-        title="Carneddau 3D Map"
-        allowFullScreen
-      />
-    </div>
-  )
+export default function CarneddauRedirect() {
+  redirect('/ranges/carneddau')
 }
