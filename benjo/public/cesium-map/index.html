@@ -167,10 +167,12 @@
     shouldAnimate: false,
   })
 
-  // Bing aerial imagery
-  viewer.imageryLayers.addImageryProvider(
-    new Cesium.IonImageryProvider({ assetId: 2 })
-  )
+  // Satellite imagery with labels
+  Cesium.createWorldImageryAsync({
+    style: Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS
+  }).then(provider => {
+    viewer.imageryLayers.addImageryProvider(provider)
+  })
 
   // Atmosphere & lighting
   viewer.scene.globe.enableLighting = true
