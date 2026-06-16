@@ -137,6 +137,9 @@
 
 <!-- Controls -->
 <div id="controls">
+  <button class="ctrl-btn" id="btnTrails">🥾 Hiking Trails</button>
+  <button class="ctrl-btn" id="btnLabels">🏷 OSM Labels</button>
+  <div style="height:1px;background:rgba(255,255,255,0.1);margin:4px 0"></div>
   <button class="ctrl-btn" id="btnWales">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Reset View</button>
   <button class="ctrl-btn" id="btnSnowdon">⛰ Snowdon</button>
   <button class="ctrl-btn" id="btnBrecon">⛰ Brecon</button>
@@ -167,12 +170,36 @@
     shouldAnimate: false,
   })
 
-  // Satellite imagery with labels
+  // Base: pure aerial, no floating labels
   Cesium.createWorldImageryAsync({
-    style: Cesium.IonWorldImageryStyle.AERIAL_WITH_LABELS
+    style: Cesium.IonWorldImageryStyle.AERIAL
   }).then(provider => {
     viewer.imageryLayers.addImageryProvider(provider)
   })
+
+  // OSM hiking trails overlay (transparent background, just trail lines + icons)
+  let trailsLayer = viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: 'https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
+      credit: '© Waymarked Trails, © OpenStreetMap contributors',
+      maximumLevel: 17,
+    })
+  )
+  trailsLayer.alpha = 0.85
+
+  // OSM flat label overlay (roads, place names — sits as a 2D layer, doesn't warp with terrain)
+  let labelsLayer = viewer.imageryLayers.addImageryProvider(
+    new Cesium.UrlTemplateImageryProvider({
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      credit: '© OpenStreetMap contributors',
+      maximumLevel: 19,
+    })
+  )
+  labelsLayer.alpha = 0.0  // hidden by default, toggled on
+
+  // Track layer visibility for toggle buttons
+  let trailsVisible = true
+  let labelsVisible = false
 
   // Atmosphere & lighting
   viewer.scene.globe.enableLighting = true
@@ -188,6 +215,23 @@
     })
   }
   flyToWales()
+
+  // Layer toggles
+  document.getElementById('btnTrails').onclick = () => {
+    trailsVisible = !trailsVisible
+    trailsLayer.alpha = trailsVisible ? 0.85 : 0.0
+    document.getElementById('btnTrails').style.color = trailsVisible ? '#e8702a' : 'rgba(255,255,255,0.7)'
+    document.getElementById('btnTrails').style.borderColor = trailsVisible ? '#e8702a' : 'rgba(255,255,255,0.12)'
+  }
+  document.getElementById('btnLabels').onclick = () => {
+    labelsVisible = !labelsVisible
+    labelsLayer.alpha = labelsVisible ? 0.7 : 0.0
+    document.getElementById('btnLabels').style.color = labelsVisible ? '#e8702a' : 'rgba(255,255,255,0.7)'
+    document.getElementById('btnLabels').style.borderColor = labelsVisible ? '#e8702a' : 'rgba(255,255,255,0.12)'
+  }
+  // Set initial active state for trails
+  document.getElementById('btnTrails').style.color = '#e8702a'
+  document.getElementById('btnTrails').style.borderColor = '#e8702a'
 
   document.getElementById('btnWales').onclick   = flyToWales
   document.getElementById('btnSnowdon').onclick = () => viewer.camera.flyTo({
