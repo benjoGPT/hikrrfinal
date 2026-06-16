@@ -1,0 +1,14 @@
+{
+  "name": "Shire Steppers — Glyderau Horseshoe",
+  "short_name": "Shire Steppers",
+  "description": "Interactive 3D satellite map of the Glyderau Horseshoe — Tryfan, Glyder Fach, Glyder Fawr & Y Garn.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12110f",
+  "theme_color": "#12110f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

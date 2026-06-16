@@ -1,0 +1,11 @@
+{
+  "bbox": { "west": -4.10, "east": -4.02, "south": 53.052, "north": 53.098, "gridW": 240, "gridH": 184, "zoom": 14 },
+  "waypoints": [
+    { "name": "Pen-y-Pass",        "lon": -4.0561, "lat": 53.0941, "poi": true,  "type": "Start / Finish" },
+    { "name": "Crib Goch",         "lon": -4.0631, "lat": 53.0815, "poi": true,  "type": "Summit" },
+    { "name": "Crib y Ddysgl",     "lon": -4.0696, "lat": 53.0750, "poi": true,  "type": "Summit" },
+    { "name": "Snowdon",           "lon": -4.0763, "lat": 53.0685, "poi": true,  "type": "Summit" },
+    { "name": "Y Lliwedd",         "lon": -4.0571, "lat": 53.0639, "poi": true,  "type": "Summit" },
+    { "name": "Pen-y-Pass",        "lon": -4.0561, "lat": 53.0941, "poi": false, "type": "Start / Finish" }
+  ]
+}

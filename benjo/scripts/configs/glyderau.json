@@ -1,0 +1,11 @@
+{
+  "bbox": { "west": -4.065, "east": -3.995, "south": 53.098, "north": 53.135, "gridW": 220, "gridH": 150, "zoom": 14 },
+  "waypoints": [
+    { "name": "Ogwen Cottage", "lon": -4.0152, "lat": 53.1136, "poi": true,  "type": "Start / Finish" },
+    { "name": "Tryfan",        "lon": -4.0494, "lat": 53.1167, "poi": true,  "type": "Summit" },
+    { "name": "Glyder Fach",   "lon": -4.0177, "lat": 53.1131, "poi": true,  "type": "Summit" },
+    { "name": "Glyder Fawr",   "lon": -4.0254, "lat": 53.1106, "poi": true,  "type": "Summit" },
+    { "name": "Y Garn",        "lon": -4.0344, "lat": 53.1217, "poi": true,  "type": "Summit" },
+    { "name": "Ogwen Cottage", "lon": -4.0152, "lat": 53.1136, "poi": false, "type": "Start / Finish" }
+  ]
+}
