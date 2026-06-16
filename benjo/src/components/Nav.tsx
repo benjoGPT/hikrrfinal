@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Mountain, Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
+  { label: 'Map',     href: '/map' },
   { label: 'Routes',  href: '/carneddau' },
   { label: 'Gallery', href: '/gallery' },
   { label: 'Stats',   href: '/stats' },
