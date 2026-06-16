@@ -170,36 +170,41 @@
     shouldAnimate: false,
   })
 
-  // Base: pure aerial, no floating labels
+  let trailsLayer, labelsLayer
+  let trailsVisible = true
+  let labelsVisible = false
+
+  // Add all layers in correct order inside the async so satellite is always bottom
   Cesium.createWorldImageryAsync({
     style: Cesium.IonWorldImageryStyle.AERIAL
   }).then(provider => {
+    // 1. Satellite base
     viewer.imageryLayers.addImageryProvider(provider)
+
+    // 2. Hiking trails overlay (transparent bg — just route lines)
+    trailsLayer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: 'https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
+        credit: '© Waymarked Trails, © OpenStreetMap contributors',
+        maximumLevel: 17,
+      })
+    )
+    trailsLayer.alpha = 0.85
+
+    // 3. OSM label overlay (place names, roads — flat, doesn't warp)
+    labelsLayer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        credit: '© OpenStreetMap contributors',
+        maximumLevel: 19,
+      })
+    )
+    labelsLayer.alpha = 0.0
+
+    // Mark trails button as active
+    document.getElementById('btnTrails').style.color = '#e8702a'
+    document.getElementById('btnTrails').style.borderColor = '#e8702a'
   })
-
-  // OSM hiking trails overlay (transparent background, just trail lines + icons)
-  let trailsLayer = viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: 'https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
-      credit: '© Waymarked Trails, © OpenStreetMap contributors',
-      maximumLevel: 17,
-    })
-  )
-  trailsLayer.alpha = 0.85
-
-  // OSM flat label overlay (roads, place names — sits as a 2D layer, doesn't warp with terrain)
-  let labelsLayer = viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      credit: '© OpenStreetMap contributors',
-      maximumLevel: 19,
-    })
-  )
-  labelsLayer.alpha = 0.0  // hidden by default, toggled on
-
-  // Track layer visibility for toggle buttons
-  let trailsVisible = true
-  let labelsVisible = false
 
   // Atmosphere & lighting
   viewer.scene.globe.enableLighting = true
