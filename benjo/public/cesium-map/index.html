@@ -194,8 +194,8 @@
     // 3. OSM label overlay (place names, roads — flat, doesn't warp)
     labelsLayer = viewer.imageryLayers.addImageryProvider(
       new Cesium.UrlTemplateImageryProvider({
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        credit: '© OpenStreetMap contributors',
+        url: 'https://basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png',
+        credit: '© CartoDB, © OpenStreetMap contributors',
         maximumLevel: 19,
       })
     )
