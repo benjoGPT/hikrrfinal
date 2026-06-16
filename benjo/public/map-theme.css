@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500;1,600&display=swap');
+
+:root {
+  --void: #0a0a0c;
+  --bronze: #e8702a;
+  --bronze-dark: #d2611f;
+  --teal: #57f0c4;
+  --white-80: rgba(255, 255, 255, 0.8);
+  --white-30: rgba(255, 255, 255, 0.3);
+  --font-sans: 'Inter', sans-serif;
+  --font-playfair: 'Playfair Display', serif;
+  --ease-hero: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.map-theme, .map-theme * {
+  font-family: var(--font-sans);
+}
+.map-theme .font-playfair {
+  font-family: var(--font-playfair);
+}
+
+/* Glass panel: floating UI containers (sidebars, info panels, toasts) */
+.glass-panel {
+  background: rgba(10, 10, 12, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--white-30);
+  border-radius: 1rem; /* rounded-2xl */
+  color: #fff;
+}
+
+/* Glass pill button: hero nav-style pill controls */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--white-30);
+  border-radius: 9999px;
+  color: var(--white-80);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.glass-pill:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.glass-pill.on,
+.glass-pill[aria-pressed="true"] {
+  background: #fff;
+  color: #111;
+}
+
+/* Bronze primary action button: matches hero CTA treatment */
+.btn-bronze {
+  background: var(--bronze);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-hero), background-color 0.15s ease;
+}
+.btn-bronze:hover {
+  background: var(--bronze-dark);
+  transform: scale(1.03);
+}
+.btn-bronze:active {
+  transform: scale(0.95);
+}
+
+/* Cinematic load overlay, shared across both map apps */
+.load-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background: var(--void);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 1s var(--ease-hero);
+}
+.load-overlay.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Stagger-fade-up entrance for UI panels, matches hero .hero-fade */
+@keyframes mapFadeUp {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.map-fade-up {
+  opacity: 0;
+  animation: mapFadeUp 0.8s var(--ease-hero) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-overlay { transition: none; }
+  .map-fade-up { animation: none; opacity: 1; transform: none; }
+}
