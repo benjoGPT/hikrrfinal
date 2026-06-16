@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benjo Map</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #cesiumContainer { width: 100%; height: 100%; overflow: hidden; background: #000; }
+
+    /* Hide Cesium default UI chrome */
+    .cesium-widget-credits { display: none !important; }
+
+    /* Sidebar */
+    #sidebar {
+      position: absolute;
+      top: 80px;
+      left: 16px;
+      z-index: 100;
+      width: 220px;
+      background: rgba(10,10,12,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 16px;
+      font-family: 'Inter', sans-serif;
+      color: #fff;
+    }
+    #sidebar h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    #sidebar p  { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      margin-bottom: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #e8702a; color: #fff; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+    .btn-danger { background: rgba(220,50,50,0.2); color: #f87171; }
+    .btn.active { background: #e8702a; color: #fff; }
+    label.btn { cursor: pointer; }
+
+    #stats {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    #stats .row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    #stats .label { font-size: 11px; color: rgba(255,255,255,0.4); }
+    #stats .value { font-size: 13px; font-weight: 600; }
+
+    /* Controls */
+    #controls {
+      position: absolute;
+      top: 80px;
+      right: 16px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ctrl-btn {
+      background: rgba(10,10,12,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: rgba(255,255,255,0.7);
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover { border-color: #e8702a; color: #e8702a; }
+
+    /* Toast */
+    #toast {
+      display: none;
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      background: rgba(10,10,12,0.92);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      padding: 10px 20px;
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<div id="cesiumContainer"></div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <h3>Route Planner</h3>
+  <p>Wales 3D</p>
+
+  <button class="btn btn-primary" id="btnDraw">✏️ Draw Route</button>
+  <label class="btn btn-secondary">
+    📂 Upload GPX
+    <input type="file" accept=".gpx" id="gpxInput" style="display:none" />
+  </label>
+  <button class="btn btn-danger" id="btnClear" style="display:none">🗑 Clear Route</button>
+
+  <div id="stats">
+    <div class="row">
+      <span class="label">Distance</span>
+      <span class="value" id="statDist">0 km</span>
+    </div>
+    <div class="row">
+      <span class="label">Points</span>
+      <span class="value" id="statPts">0</span>
+    </div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="ctrl-btn" id="btnWales">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Reset View</button>
+  <button class="ctrl-btn" id="btnSnowdon">⛰ Snowdon</button>
+  <button class="ctrl-btn" id="btnBrecon">⛰ Brecon</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Token — replace with your Cesium Ion token ──────────────────────────────
+  const TOKEN = window.CESIUM_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ0OS1kMWFjYmFkNjc4YjkiLCJpZCI6NTc3MzMsImlhdCI6MTYyNzg0NTE4Mn0.XcKpgANiY19MC4bdFUXMVEBToBmqS8kuYpUlxJHYZxk'
+  Cesium.Ion.defaultAccessToken = TOKEN
+
+  // ── Viewer ───────────────────────────────────────────────────────────────────
+  const viewer = new Cesium.Viewer('cesiumContainer', {
+    terrainProvider: Cesium.createWorldTerrain({ requestWaterMask: true, requestVertexNormals: true }),
+    imageryProvider: false,
+    baseLayerPicker: false,
+    geocoder: false,
+    homeButton: false,
+    sceneModePicker: false,
+    navigationHelpButton: false,
+    animation: false,
+    timeline: false,
+    fullscreenButton: false,
+    infoBox: false,
+    selectionIndicator: false,
+    shadows: false,
+    shouldAnimate: false,
+  })
+
+  // Bing aerial imagery
+  viewer.imageryLayers.addImageryProvider(
+    new Cesium.IonImageryProvider({ assetId: 2 })
+  )
+
+  // Atmosphere & lighting
+  viewer.scene.globe.enableLighting = true
+  viewer.scene.skyAtmosphere.show = true
+  viewer.scene.globe.atmosphereLightIntensity = 20.0
+
+  // ── Initial view: Wales ──────────────────────────────────────────────────────
+  function flyToWales() {
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(-3.78, 52.0, 120000),
+      orientation: { heading: Cesium.Math.toRadians(0), pitch: Cesium.Math.toRadians(-35), roll: 0 },
+      duration: 2,
+    })
+  }
+  flyToWales()
+
+  document.getElementById('btnWales').onclick   = flyToWales
+  document.getElementById('btnSnowdon').onclick = () => viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-4.076, 53.068, 4000),
+    orientation: { heading: Cesium.Math.toRadians(20), pitch: Cesium.Math.toRadians(-25), roll: 0 },
+    duration: 3,
+  })
+  document.getElementById('btnBrecon').onclick  = () => viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-3.437, 51.88, 4000),
+    orientation: { heading: Cesium.Math.toRadians(0), pitch: Cesium.Math.toRadians(-25), roll: 0 },
+    duration: 3,
+  })
+
+  // ── Route drawing ────────────────────────────────────────────────────────────
+  let drawing = false
+  let routeCoords = []   // [{lon, lat, alt}]
+  let routeEntity = null
+  let markerEntities = []
+
+  function haversine(a, b) {
+    const R = 6371, toRad = d => d * Math.PI / 180
+    const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon)
+    const h = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLon/2)**2
+    return R * 2 * Math.asin(Math.sqrt(h))
+  }
+
+  function totalDist() {
+    let d = 0
+    for (let i = 1; i < routeCoords.length; i++) d += haversine(routeCoords[i-1], routeCoords[i])
+    return d
+  }
+
+  function updateStats() {
+    const el = document.getElementById('stats')
+    if (routeCoords.length < 2) { el.style.display = 'none'; return }
+    el.style.display = 'block'
+    document.getElementById('statDist').textContent = totalDist().toFixed(2) + ' km'
+    document.getElementById('statPts').textContent  = routeCoords.length
+  }
+
+  function buildPositions() {
+    return routeCoords.flatMap(c => [c.lon, c.lat, (c.alt || 0) + 50])
+  }
+
+  function redrawRoute() {
+    if (routeEntity) viewer.entities.remove(routeEntity)
+    if (routeCoords.length < 2) { routeEntity = null; return }
+    routeEntity = viewer.entities.add({
+      polyline: {
+        positions: Cesium.Cartesian3.fromDegreesArrayHeights(buildPositions()),
+        width: 4,
+        material: new Cesium.PolylineGlowMaterialProperty({ glowPower: 0.15, color: Cesium.Color.fromCssColorString('#e8702a') }),
+        clampToGround: false,
+        arcType: Cesium.ArcType.GEODESIC,
+      }
+    })
+    updateStats()
+  }
+
+  function addMarker(lon, lat, alt) {
+    const e = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(lon, lat, (alt || 0) + 60),
+      point: { pixelSize: 8, color: Cesium.Color.fromCssColorString('#e8702a'), outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
+    })
+    markerEntities.push(e)
+  }
+
+  const btnDraw = document.getElementById('btnDraw')
+  btnDraw.onclick = () => {
+    drawing = !drawing
+    btnDraw.textContent = drawing ? '✏️ Drawing… (click globe)' : '✏️ Draw Route'
+    btnDraw.classList.toggle('active', drawing)
+    viewer.canvas.style.cursor = drawing ? 'crosshair' : 'default'
+  }
+
+  // Click handler
+  const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas)
+  handler.setInputAction(click => {
+    if (!drawing) return
+    const ray = viewer.camera.getPickRay(click.position)
+    const pos = viewer.scene.globe.pick(ray, viewer.scene)
+    if (!pos) return
+    const carto = Cesium.Cartographic.fromCartesian(pos)
+    const lon = Cesium.Math.toDegrees(carto.longitude)
+    const lat = Cesium.Math.toDegrees(carto.latitude)
+    const alt = carto.height
+    routeCoords.push({ lon, lat, alt })
+    addMarker(lon, lat, alt)
+    redrawRoute()
+    document.getElementById('btnClear').style.display = 'block'
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
+  // Clear
+  document.getElementById('btnClear').onclick = () => {
+    if (routeEntity) { viewer.entities.remove(routeEntity); routeEntity = null }
+    markerEntities.forEach(e => viewer.entities.remove(e))
+    markerEntities = []
+    routeCoords = []
+    document.getElementById('btnClear').style.display = 'none'
+    document.getElementById('stats').style.display = 'none'
+    drawing = false
+    btnDraw.textContent = '✏️ Draw Route'
+    btnDraw.classList.remove('active')
+    viewer.canvas.style.cursor = 'default'
+  }
+
+  // ── GPX upload ───────────────────────────────────────────────────────────────
+  document.getElementById('gpxInput').onchange = function(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(ev.target.result, 'application/xml')
+      const pts = Array.from(doc.querySelectorAll('trkpt, rtept, wpt'))
+      if (!pts.length) { showToast('No track points found'); return }
+
+      // Clear existing
+      if (routeEntity) viewer.entities.remove(routeEntity)
+      markerEntities.forEach(e => viewer.entities.remove(e))
+      markerEntities = []
+
+      routeCoords = pts.map(p => ({
+        lon: parseFloat(p.getAttribute('lon')),
+        lat: parseFloat(p.getAttribute('lat')),
+        alt: parseFloat(p.querySelector('ele')?.textContent || '0'),
+      }))
+
+      redrawRoute()
+      document.getElementById('btnClear').style.display = 'block'
+
+      // Fly to route
+      const lons = routeCoords.map(c => c.lon)
+      const lats = routeCoords.map(c => c.lat)
+      const center = [(Math.min(...lons)+Math.max(...lons))/2, (Math.min(...lats)+Math.max(...lats))/2]
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(center[0], center[1] - 0.05, 8000),
+        orientation: { heading: 0, pitch: Cesium.Math.toRadians(-30), roll: 0 },
+        duration: 2,
+      })
+      showToast('Loaded ' + routeCoords.length + ' points · ' + totalDist().toFixed(1) + ' km')
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  let toastTimer
+  function showToast(msg) {
+    const el = document.getElementById('toast')
+    el.textContent = msg
+    el.style.display = 'block'
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => { el.style.display = 'none' }, 3000)
+  }
+</script>
+</body>
+</html>
