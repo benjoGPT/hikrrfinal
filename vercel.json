@@ -1,5 +1,8 @@
 {
-  "buildCommand": "cd lithos && npm install && npm run build",
+  "buildCommand": "cd lithos && npm install && npm run build && cd .. && cp index.html lithos/dist/carneddau.html && cp model.js lithos/dist/model.js && cp sw.js lithos/dist/sw.js && cp manifest.json lithos/dist/manifest.json",
   "outputDirectory": "lithos/dist",
-  "installCommand": "echo skip"
+  "installCommand": "echo skip",
+  "rewrites": [
+    { "source": "/carneddau", "destination": "/carneddau.html" }
+  ]
 }

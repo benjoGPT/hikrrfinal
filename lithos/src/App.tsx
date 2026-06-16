@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { Menu, X, Mountain } from 'lucide-react'
 import './index.css'
+
+const HIKE_MAP_URL = '/carneddau'   // the Three.js map lives here
 
 const BG_IMAGE_1 =
   'https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260609_195923_b0ba8ace-1d1d-4f2c-9a28-1ab84b330680.png&w=1280&q=85'
@@ -83,49 +86,79 @@ function RevealLayer({ image, cursorX, cursorY }: RevealLayerProps) {
 }
 
 // ── Nav ──────────────────────────────────────────────────────────────────────
-const NAV_LINKS = ['Course', 'Field Guides', 'Geology', 'Plans', 'Live Tour']
+const NAV_LINKS = ['Routes', 'Gallery', 'Stats', 'Journal', 'Plans']
 
 function Nav() {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between p-4 sm:p-5">
-      {/* Logo + wordmark */}
-      <div className="flex items-center gap-2.5">
-        <svg width="26" height="26" viewBox="0 0 256 256" fill="#ffffff">
-          <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
-        </svg>
-        <span className="text-white text-2xl font-playfair italic">Lithos</span>
-      </div>
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between p-4 sm:p-5">
+        {/* Logo + wordmark */}
+        <div className="flex items-center gap-2.5">
+          <Mountain className="text-white" size={22} strokeWidth={1.8} />
+          <span className="text-white text-2xl font-playfair italic">Benjo</span>
+        </div>
 
-      {/* Center pill (desktop only) */}
-      <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-2 py-2 items-center gap-1">
-        {NAV_LINKS.map((link) => (
-          <button
-            key={link}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              link === 'Course'
-                ? 'bg-white text-gray-900'
-                : 'text-white/80 hover:bg-white/20 hover:text-white'
-            }`}
+        {/* Center pill (desktop only) */}
+        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-2 py-2 items-center gap-1">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                link === 'Routes'
+                  ? 'bg-white text-gray-900'
+                  : 'text-white/80 hover:bg-white/20 hover:text-white'
+              }`}
+            >
+              {link}
+            </button>
+          ))}
+        </div>
+
+        {/* Right */}
+        <div className="flex items-center gap-3">
+          <a
+            href={HIKE_MAP_URL}
+            className="hidden md:block bg-white text-gray-900 text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-gray-100 transition-colors"
           >
-            {link}
+            Open Map
+          </a>
+          <button
+            className="md:hidden text-white p-1"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setMenuOpen(v => !v)}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
-        ))}
-      </div>
+        </div>
+      </nav>
 
-      {/* Right: desktop sign-up / mobile hamburger */}
-      <div className="flex items-center gap-3">
-        <button className="hidden md:block bg-white text-gray-900 text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-gray-100 transition-colors">
-          Sign Up
-        </button>
-        <button className="md:hidden text-white p-1" aria-label="Menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6"  x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+      {/* Mobile slide-down drawer */}
+      <div
+        className={`fixed inset-x-0 top-0 z-[90] bg-black/90 backdrop-blur-xl transition-all duration-300 ease-in-out md:hidden ${
+          menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="flex flex-col gap-1 pt-24 pb-8 px-6">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link}
+              onClick={() => setMenuOpen(false)}
+              className="text-left text-white/80 hover:text-white text-lg font-medium py-3 border-b border-white/10 last:border-0 transition-colors"
+            >
+              {link}
+            </button>
+          ))}
+          <a
+            href={HIKE_MAP_URL}
+            className="mt-6 bg-[#e8702a] text-white text-sm font-semibold px-6 py-3.5 rounded-full text-center hover:bg-[#d2611f] transition-colors"
+          >
+            Open the Carneddau Map →
+          </a>
+        </div>
       </div>
-    </nav>
+    </>
   )
 }
 
@@ -179,13 +212,13 @@ function Hero() {
             className="block font-playfair italic font-normal text-5xl sm:text-7xl md:text-8xl hero-anim hero-reveal"
             style={{ letterSpacing: '-0.05em', animationDelay: '0.25s' }}
           >
-            Layers hold
+            Every summit,
           </span>
           <span
             className="block font-normal text-5xl sm:text-7xl md:text-8xl -mt-1 hero-anim hero-reveal"
             style={{ letterSpacing: '-0.08em', animationDelay: '0.42s' }}
           >
-            tales of time
+            carved in 3D
           </span>
         </h1>
       </div>
@@ -196,7 +229,7 @@ function Hero() {
         style={{ animationDelay: '0.7s' }}
       >
         <p className="text-sm text-white/80 leading-relaxed">
-          Every layer of sediment records a chapter of our planet, from ancient seabeds to drifting ash, layered across millions of years beneath us.
+          A personal log of routes walked, ridges crossed and summits bagged — rendered as interactive 3D terrain you can orbit, explore and relive.
         </p>
       </div>
 
@@ -206,11 +239,14 @@ function Hero() {
         style={{ animationDelay: '0.85s' }}
       >
         <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
-          Our interactive maps let you peel back the crust to trace how stones, fossils, and deep time combine to shape the ground beneath your feet.
+          Move your cursor to reveal the terrain beneath. Tap a summit to inspect it, or hit play to walk the route from above.
         </p>
-        <button className="bg-[#e8702a] hover:bg-[#d2611f] text-white text-sm font-medium px-7 py-3 rounded-full transition-all hover:scale-[1.03] active:scale-95 hover:shadow-lg hover:shadow-[#e8702a]/30">
-          Start Digging
-        </button>
+        <a
+          href={HIKE_MAP_URL}
+          className="bg-[#e8702a] hover:bg-[#d2611f] text-white text-sm font-medium px-7 py-3 rounded-full transition-all hover:scale-[1.03] active:scale-95 hover:shadow-lg hover:shadow-[#e8702a]/30"
+        >
+          Walk the Carneddau →
+        </a>
       </div>
     </section>
   )
@@ -219,7 +255,7 @@ function Hero() {
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <div className="min-h-screen bg-white tracking-[-0.02em]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-black tracking-[-0.02em]" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Nav />
       <Hero />
     </div>
