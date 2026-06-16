@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd benjo && npm install && npm run build",
   "outputDirectory": "benjo/.next",
-  "installCommand": "echo skip",
+  "installCommand": "npm install",
   "framework": "nextjs"
 }
