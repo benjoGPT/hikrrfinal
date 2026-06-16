@@ -25,7 +25,7 @@ export default function Nav({ active, user }: NavProps) {
         {/* Wordmark */}
         <Link href="/" className="flex items-center gap-2.5 no-underline">
           <Mountain size={22} color="#fff" strokeWidth={1.8} />
-          <span className="font-playfair italic text-white text-2xl leading-none">Benjo</span>
+          <span className="font-playfair italic text-white text-2xl leading-none">BenjoHikes</span>
         </Link>
 
         {/* Centre pill — desktop */}
