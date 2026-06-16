@@ -359,12 +359,14 @@
     trailsVisible = !trailsVisible
     trailsLayer.alpha = trailsVisible ? 0.55 : 0.0
     document.getElementById('btnTrails').classList.toggle('on', trailsVisible)
+    viewer.scene.requestRender()
   }
   document.getElementById('btnLabels').onclick = () => {
     if (!labelsLayer) return
     labelsVisible = !labelsVisible
     labelsLayer.alpha = labelsVisible ? 0.75 : 0.0
     document.getElementById('btnLabels').classList.toggle('on', labelsVisible)
+    viewer.scene.requestRender()
   }
 
   // ── Mountain peaks (Overpass API) ────────────────────────────────────────────
@@ -446,6 +448,7 @@
     peaksVisible = !peaksVisible
     peakEntities.forEach(e => { e.show = peaksVisible })
     document.getElementById('btnPeaks').classList.toggle('on', peaksVisible)
+    viewer.scene.requestRender()
   }
 
   // ── Peak click → info panel ──────────────────────────────────────────────────

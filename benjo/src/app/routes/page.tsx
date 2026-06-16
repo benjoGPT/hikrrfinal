@@ -29,10 +29,9 @@ export default function RoutesPage() {
       <Nav active="Routes" />
 
       <SpotlightReveal
-        className="w-full"
+        className="w-full h-[70dvh] pt-16"
         base={
-          <div className="w-full h-full bg-black flex flex-col items-center justify-center text-center px-5"
-            style={{ height: '60dvh' }}>
+          <div className="w-full h-full bg-black flex flex-col items-center justify-center text-center px-5">
             <h1 className="text-white" style={{ lineHeight: 0.95 }}>
               <span className="block font-playfair italic font-normal text-4xl sm:text-6xl md:text-7xl"
                 style={{ letterSpacing: '-0.05em' }}>
@@ -51,7 +50,7 @@ export default function RoutesPage() {
         }
         revealed={
           <div className="w-full h-full flex flex-col items-center justify-center text-center px-5"
-            style={{ height: '60dvh', background: 'radial-gradient(circle at center, #e8702a33, transparent 70%), #0a0a0c' }}>
+            style={{ background: 'radial-gradient(circle at center, #e8702a33, transparent 70%), #0a0a0c' }}>
             <h1 className="text-white" style={{ lineHeight: 0.95 }}>
               <span className="block font-playfair italic font-normal text-4xl sm:text-6xl md:text-7xl"
                 style={{ letterSpacing: '-0.05em', textShadow: '0 0 40px rgba(232,112,42,0.6)' }}>
@@ -66,7 +65,7 @@ export default function RoutesPage() {
         }
       />
 
-      <div className="px-5 sm:px-10 md:px-14 pb-20 -mt-10 relative z-10">
+      <div className="px-5 sm:px-10 md:px-14 pb-20 -mt-6 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
           {RANGES.map(r => (
             <Link key={r.href} href={r.href} className="no-underline group">
