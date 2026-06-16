@@ -151,7 +151,7 @@
 
   // ── Viewer ───────────────────────────────────────────────────────────────────
   const viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider: Cesium.createWorldTerrain({ requestWaterMask: true, requestVertexNormals: true }),
+    terrain: Cesium.Terrain.fromWorldTerrain({ requestWaterMask: true, requestVertexNormals: true }),
     imageryProvider: false,
     baseLayerPicker: false,
     geocoder: false,
