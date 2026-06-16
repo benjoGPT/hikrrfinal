@@ -1,8 +1,6 @@
 {
-  "buildCommand": "cd lithos && npm install && npm run build && cd .. && cp index.html lithos/dist/carneddau.html && cp model.js lithos/dist/model.js && cp sw.js lithos/dist/sw.js && cp manifest.json lithos/dist/manifest.json",
-  "outputDirectory": "lithos/dist",
+  "buildCommand": "cd benjo && npm install && npm run build",
+  "outputDirectory": "benjo/.next",
   "installCommand": "echo skip",
-  "rewrites": [
-    { "source": "/carneddau", "destination": "/carneddau.html" }
-  ]
+  "framework": "nextjs"
 }
