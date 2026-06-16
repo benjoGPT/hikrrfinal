@@ -65,6 +65,15 @@ export default function LoginPage() {
           No account?{' '}
           <Link href="/signup" className="text-[#e8702a] hover:text-[#d2611f] transition-colors no-underline">Sign up</Link>
         </p>
+
+        <div className="flex items-center gap-3 mt-4">
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-white/30 text-xs">or</span>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+        <Link href="/dashboard" className="block text-center text-white/40 hover:text-white/70 text-sm mt-4 transition-colors no-underline">
+          Continue as guest →
+        </Link>
       </div>
     </div>
   )

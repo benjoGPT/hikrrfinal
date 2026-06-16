@@ -56,6 +56,9 @@ export default function SignupPage() {
               Already have an account?{' '}
               <Link href="/login" className="text-[#e8702a] no-underline hover:underline">Sign in</Link>
             </p>
+            <Link href="/dashboard" className="block text-center text-white/40 hover:text-white/70 text-xs mt-1 transition-colors no-underline">
+              Continue as guest →
+            </Link>
           </form>
         )}
       </div>
