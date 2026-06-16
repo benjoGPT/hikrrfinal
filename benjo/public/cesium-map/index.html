@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Benjo Map</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #cesiumContainer { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    .cesium-widget-credits { display: none !important; }
+
+    #sidebar {
+      position: absolute; top: 80px; left: 16px; z-index: 100;
+      width: 230px;
+      background: rgba(10,10,12,0.88); backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+      padding: 16px; font-family: 'Inter', sans-serif; color: #fff;
+    }
+    #sidebar h3 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    #sidebar .sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 14px; }
+    .btn {
+      display: block; width: 100%; padding: 9px 13px; border-radius: 11px; border: none;
+      font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif;
+      cursor: pointer; text-align: left; margin-bottom: 7px; transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #e8702a; color: #fff; }
+    .btn-secondary { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.1); }
+    .btn-danger { background: rgba(220,50,50,0.15); color: #f87171; border: 1px solid rgba(220,50,50,0.2); }
+    label.btn { cursor: pointer; }
+
+    #stats { display: none; margin-top: 11px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,0.08); }
+    #stats .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    #stats .lbl { font-size: 11px; color: rgba(255,255,255,0.38); }
+    #stats .val { font-size: 13px; font-weight: 600; }
+
+    /* Mountain info panel */
+    #peakPanel {
+      display: none;
+      position: absolute; top: 80px; right: 200px; z-index: 100;
+      width: 280px; max-height: 70vh; overflow-y: auto;
+      background: rgba(10,10,12,0.92); backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+      padding: 18px; font-family: 'Inter', sans-serif; color: #fff;
+    }
+    #peakPanel .peak-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+    #peakPanel .peak-ele { font-size: 13px; color: #e8702a; font-weight: 600; margin-bottom: 12px; }
+    #peakPanel .panel-close {
+      position: absolute; top: 14px; right: 14px;
+      background: none; border: none; color: rgba(255,255,255,0.4);
+      font-size: 18px; cursor: pointer; line-height: 1;
+    }
+    #peakPanel .panel-close:hover { color: #fff; }
+    #peakPanel h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.35); margin-bottom: 8px; }
+    .trail-item {
+      padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.06);
+      margin-bottom: 6px; cursor: pointer; transition: background 0.15s;
+      border: 1px solid transparent;
+    }
+    .trail-item:hover { background: rgba(232,112,42,0.15); border-color: rgba(232,112,42,0.3); }
+    .trail-item .t-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+    .trail-item .t-meta { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .trail-loading { font-size: 12px; color: rgba(255,255,255,0.4); padding: 8px 0; }
+    .peak-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .peak-actions button {
+      flex: 1; padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
+      background: none; color: rgba(255,255,255,0.7); font-size: 12px; font-family: 'Inter',sans-serif;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .peak-actions button:hover { border-color: #e8702a; color: #e8702a; }
+
+    /* Controls */
+    #controls {
+      position: absolute; top: 80px; right: 16px; z-index: 100;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .ctrl-btn {
+      background: rgba(10,10,12,0.85); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+      color: rgba(255,255,255,0.7); font-size: 12px; font-family: 'Inter',sans-serif;
+      font-weight: 500; padding: 8px 12px; cursor: pointer; transition: all 0.15s;
+      text-align: left;
+    }
+    .ctrl-btn:hover { border-color: #e8702a; color: #e8702a; }
+    .ctrl-btn.on { color: #e8702a; border-color: rgba(232,112,42,0.6); }
+
+    /* Toast */
+    #toast {
+      display: none; position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+      z-index: 300; background: rgba(10,10,12,0.94); border: 1px solid rgba(255,255,255,0.15);
+      color: #fff; font-size: 13px; font-family: 'Inter',sans-serif;
+      padding: 10px 20px; border-radius: 999px; backdrop-filter: blur(12px); white-space: nowrap;
+    }
+
+    /* Share modal */
+    #shareModal {
+      display: none; position: absolute; inset: 0; z-index: 400;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    #shareModal.open { display: flex; }
+    #shareModal .box {
+      background: #0a0a0c; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 18px; padding: 24px; width: 340px; font-family: 'Inter',sans-serif; color: #fff;
+    }
+    #shareModal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+    #shareModal input, #shareModal textarea {
+      width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 13px;
+      font-family: 'Inter',sans-serif; outline: none; margin-bottom: 10px;
+    }
+    #shareModal .actions { display: flex; gap: 8px; margin-top: 4px; }
+    #shareModal .actions button {
+      flex: 1; padding: 10px; border-radius: 11px; font-size: 13px;
+      font-family: 'Inter',sans-serif; font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+    }
+    #shareModal .actions button:hover { opacity: 0.85; }
+    #shareModal .cancel { background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.6); }
+    #shareModal .save { background: #e8702a; border: none; color: #fff; }
+    #shareUrl { word-break: break-all; font-size: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 12px; color: rgba(255,255,255,0.7); display: none; margin-top: 8px; cursor: pointer; }
+    #shareUrl:hover { background: rgba(255,255,255,0.1); }
+  </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <h3>Route Planner</h3>
+  <p class="sub">Wales 3D · Click any peak ⛰</p>
+  <button class="btn btn-primary" id="btnDraw">✏️ Draw Route</button>
+  <label class="btn btn-secondary">
+    📂 Upload GPX
+    <input type="file" accept=".gpx" id="gpxInput" style="display:none" />
+  </label>
+  <button class="btn btn-danger" id="btnClear" style="display:none">🗑 Clear Route</button>
+  <div id="stats">
+    <div class="row"><span class="lbl">Distance</span><span class="val" id="statDist">—</span></div>
+    <div class="row"><span class="lbl">Points</span><span class="val" id="statPts">—</span></div>
+    <button class="btn btn-secondary" id="btnShare" style="margin-top:10px">🔗 Save & Share</button>
+  </div>
+</div>
+
+<!-- Peak info panel -->
+<div id="peakPanel">
+  <button class="panel-close" id="closePeak">✕</button>
+  <div class="peak-name" id="peakName">—</div>
+  <div class="peak-ele" id="peakEle">—</div>
+  <h4>Nearby Hiking Routes</h4>
+  <div id="trailList"><p class="trail-loading">Loading trails…</p></div>
+  <div class="peak-actions">
+    <button id="peakFly">🎥 Fly here</button>
+    <button id="peakDraw">✏️ Start here</button>
+  </div>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="ctrl-btn on" id="btnPeaks">⛰ Summits</button>
+  <button class="ctrl-btn on" id="btnTrails">🥾 Hiking Trails</button>
+  <button class="ctrl-btn" id="btnLabels">🏷 OSM Labels</button>
+  <div style="height:1px;background:rgba(255,255,255,0.1);margin:2px 0"></div>
+  <button class="ctrl-btn" id="btnWales">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales</button>
+  <button class="ctrl-btn" id="btnSnowdon">⛰ Snowdon</button>
+  <button class="ctrl-btn" id="btnBrecon">⛰ Brecon</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- Share modal -->
+<div id="shareModal">
+  <div class="box">
+    <h3>💾 Save Route</h3>
+    <input type="text" id="saveTitle" placeholder="Route name (e.g. Snowdon Ranger Path)" />
+    <textarea id="saveDesc" rows="2" placeholder="Description (optional)"></textarea>
+    <div id="shareUrl"></div>
+    <div class="actions">
+      <button class="cancel" id="cancelShare">Cancel</button>
+      <button class="save" id="confirmShare">Save & Get Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmZWNlZmMxYi0zNTNmLTQzOGYtYTYyYy0wMjhlNGNhNzQ1MzEiLCJpZCI6NDQ1MjM5LCJzdWIiOiJiZW5qb0dQVCIsImlzcyI6Imh0dHBzOi8vYXBpLmNlc2l1bS5jb20iLCJhdWQiOiJoaWtyciIsImlhdCI6MTc4MTYxNjExMH0.nwhISYgWMs5lJtB-5bMSyRYr5pBtr4ta7PEqSnoRqcc'
+  Cesium.Ion.defaultAccessToken = TOKEN
+
+  const viewer = new Cesium.Viewer('cesiumContainer', {
+    terrain: Cesium.Terrain.fromWorldTerrain({ requestWaterMask: true, requestVertexNormals: true }),
+    imageryProvider: false,
+    baseLayerPicker: false, geocoder: false, homeButton: false,
+    sceneModePicker: false, navigationHelpButton: false,
+    animation: false, timeline: false, fullscreenButton: false,
+    infoBox: false, selectionIndicator: false, shadows: false, shouldAnimate: false,
+  })
+
+  viewer.scene.globe.enableLighting = true
+  viewer.scene.skyAtmosphere.show = true
+  viewer.scene.globe.atmosphereLightIntensity = 20.0
+
+  // ── Imagery layers ───────────────────────────────────────────────────────────
+  let trailsLayer, labelsLayer
+  let trailsVisible = true, labelsVisible = false
+
+  Cesium.createWorldImageryAsync({ style: Cesium.IonWorldImageryStyle.AERIAL }).then(provider => {
+    viewer.imageryLayers.addImageryProvider(provider)
+
+    trailsLayer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: 'https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png',
+        credit: '© Waymarked Trails, © OpenStreetMap',
+        maximumLevel: 17,
+      })
+    )
+    trailsLayer.alpha = 0.55  // lighter / cleaner
+
+    labelsLayer = viewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: 'https://basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png',
+        credit: '© CartoDB, © OpenStreetMap',
+        maximumLevel: 19,
+      })
+    )
+    labelsLayer.alpha = 0.0
+  })
+
+  // ── Views ────────────────────────────────────────────────────────────────────
+  function flyToWales() {
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(-3.78, 52.0, 120000),
+      orientation: { heading: 0, pitch: Cesium.Math.toRadians(-35), roll: 0 },
+      duration: 2,
+    })
+  }
+  flyToWales()
+
+  document.getElementById('btnWales').onclick   = flyToWales
+  document.getElementById('btnSnowdon').onclick = () => viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-4.076, 53.068, 4500),
+    orientation: { heading: Cesium.Math.toRadians(20), pitch: Cesium.Math.toRadians(-28), roll: 0 },
+    duration: 3,
+  })
+  document.getElementById('btnBrecon').onclick = () => viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-3.437, 51.88, 4500),
+    orientation: { heading: 0, pitch: Cesium.Math.toRadians(-28), roll: 0 },
+    duration: 3,
+  })
+
+  // ── Layer toggles ────────────────────────────────────────────────────────────
+  document.getElementById('btnTrails').onclick = () => {
+    if (!trailsLayer) return
+    trailsVisible = !trailsVisible
+    trailsLayer.alpha = trailsVisible ? 0.55 : 0.0
+    document.getElementById('btnTrails').classList.toggle('on', trailsVisible)
+  }
+  document.getElementById('btnLabels').onclick = () => {
+    if (!labelsLayer) return
+    labelsVisible = !labelsVisible
+    labelsLayer.alpha = labelsVisible ? 0.75 : 0.0
+    document.getElementById('btnLabels').classList.toggle('on', labelsVisible)
+  }
+
+  // ── Mountain peaks (Overpass API) ────────────────────────────────────────────
+  let peakEntities = []
+  let peaksVisible = true
+  let activePeakCoord = null
+
+  async function loadPeaks() {
+    showToast('Loading Welsh summits…')
+    const query = `[out:json][timeout:30];
+      node["natural"="peak"](51.3,-5.4,53.5,-2.6);
+      out body;`
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST', body: 'data=' + encodeURIComponent(query)
+      })
+      const data = await res.json()
+      data.elements.forEach(el => {
+        if (!el.lat || !el.lon) return
+        const name = el.tags?.name || el.tags?.['name:en'] || ''
+        const ele  = el.tags?.ele ? parseInt(el.tags.ele) : null
+        if (!name) return  // skip unnamed blips
+
+        const e = viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(el.lon, el.lat, (ele || 0) + 80),
+          billboard: {
+            image: peakIcon(ele),
+            width: 24, height: 24,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            scaleByDistance: new Cesium.NearFarScalar(2000, 1.4, 200000, 0.5),
+          },
+          label: {
+            text: name + (ele ? '\n' + ele + 'm' : ''),
+            font: '11px Inter, sans-serif',
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 3,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cesium.Cartesian2(0, -28),
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            scaleByDistance: new Cesium.NearFarScalar(2000, 1.0, 80000, 0.0),
+            translucencyByDistance: new Cesium.NearFarScalar(5000, 1.0, 60000, 0.0),
+          },
+          properties: { name, ele, lon: el.lon, lat: el.lat, osmId: el.id },
+        })
+        peakEntities.push(e)
+      })
+      showToast(`${peakEntities.length} Welsh summits loaded`)
+    } catch(err) {
+      showToast('Could not load peaks — try refreshing')
+    }
+  }
+
+  function peakIcon(ele) {
+    const c = document.createElement('canvas')
+    c.width = 24; c.height = 24
+    const ctx = c.getContext('2d')
+    const color = ele >= 1000 ? '#e8702a' : ele >= 600 ? '#f5a058' : '#ffd9a0'
+    ctx.beginPath()
+    ctx.arc(12, 12, 9, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // triangle
+    ctx.beginPath()
+    ctx.moveTo(12, 5); ctx.lineTo(18, 16); ctx.lineTo(6, 16)
+    ctx.closePath()
+    ctx.fillStyle = '#fff'
+    ctx.fill()
+    return c.toDataURL()
+  }
+
+  // Peaks toggle
+  document.getElementById('btnPeaks').onclick = () => {
+    peaksVisible = !peaksVisible
+    peakEntities.forEach(e => { e.show = peaksVisible })
+    document.getElementById('btnPeaks').classList.toggle('on', peaksVisible)
+  }
+
+  // ── Peak click → info panel ──────────────────────────────────────────────────
+  let loadedTrailEntities = []
+
+  const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas)
+  clickHandler.setInputAction(async click => {
+    const picked = viewer.scene.pick(click.position)
+
+    // Peak entity clicked
+    if (picked?.id?.properties?.name) {
+      if (drawing) return
+      const props = picked.id.properties
+      const name = props.name.getValue()
+      const ele  = props.ele.getValue()
+      const lon  = props.lon.getValue()
+      const lat  = props.lat.getValue()
+      activePeakCoord = { lon, lat, ele }
+
+      document.getElementById('peakName').textContent = name
+      document.getElementById('peakEle').textContent  = ele ? `${ele}m elevation` : 'Elevation unknown'
+      document.getElementById('peakPanel').style.display = 'block'
+      document.getElementById('trailList').innerHTML = '<p class="trail-loading">Loading trails…</p>'
+
+      // Fly closer if far away
+      const camHeight = viewer.camera.positionCartographic.height
+      if (camHeight > 30000) {
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(lon, lat - 0.03, 6000),
+          orientation: { heading: 0, pitch: Cesium.Math.toRadians(-30), roll: 0 },
+          duration: 2,
+        })
+      }
+
+      loadNearbyTrails(lon, lat, name)
+      return
+    }
+
+    // Globe click for drawing
+    if (drawing) {
+      const ray = viewer.camera.getPickRay(click.position)
+      const pos = viewer.scene.globe.pick(ray, viewer.scene)
+      if (!pos) return
+      const carto = Cesium.Cartographic.fromCartesian(pos)
+      const lon = Cesium.Math.toDegrees(carto.longitude)
+      const lat = Cesium.Math.toDegrees(carto.latitude)
+      const alt = carto.height
+      routeCoords.push({ lon, lat, alt })
+      addRouteMarker(lon, lat, alt)
+      redrawRoute()
+      document.getElementById('btnClear').style.display = 'block'
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
+  async function loadNearbyTrails(lon, lat, peakName) {
+    const r = 0.05  // ~5km radius
+    const query = `[out:json][timeout:25];
+      (
+        relation["route"="hiking"](${lat-r},${lon-r},${lat+r},${lon+r});
+        way["highway"~"^(path|footway|track)$"]["foot"!="no"](${lat-r},${lon-r},${lat+r},${lon+r});
+      );
+      out tags;`
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST', body: 'data=' + encodeURIComponent(query)
+      })
+      const data = await res.json()
+
+      // Group: named relations first, then named ways
+      const routes = data.elements.filter(e => e.type === 'relation' && e.tags?.name)
+      const paths  = data.elements.filter(e => e.type === 'way' && e.tags?.name)
+
+      const items = [...routes, ...paths].slice(0, 12)
+      if (!items.length) {
+        document.getElementById('trailList').innerHTML = '<p class="trail-loading">No named trails found nearby.</p>'
+        return
+      }
+
+      document.getElementById('trailList').innerHTML = items.map(el => {
+        const dist = el.tags?.distance || el.tags?.['osm:way:distance'] || ''
+        const type = el.type === 'relation' ? (el.tags?.route_name || 'Route') : 'Path'
+        const diff = el.tags?.difficulty || el.tags?.sac_scale?.replace(/_/g,' ') || ''
+        return `<div class="trail-item" onclick="showTrailOnMap(${el.id},'${el.type}','${(el.tags?.name||'').replace(/'/g,"\\'")}')">
+          <div class="t-name">${el.tags?.name || 'Unnamed'}</div>
+          <div class="t-meta">${type}${dist?' · '+dist:''}${diff?' · '+diff:''}</div>
+        </div>`
+      }).join('')
+    } catch {
+      document.getElementById('trailList').innerHTML = '<p class="trail-loading">Failed to load trails.</p>'
+    }
+  }
+
+  async function showTrailOnMap(osmId, type, name) {
+    // Clear previous trail highlights
+    loadedTrailEntities.forEach(e => viewer.entities.remove(e))
+    loadedTrailEntities = []
+
+    showToast('Loading ' + name + '…')
+    const query = type === 'relation'
+      ? `[out:json][timeout:30];relation(${osmId});(._;>;);out geom;`
+      : `[out:json][timeout:30];way(${osmId});out geom;`
+
+    try {
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST', body: 'data=' + encodeURIComponent(query)
+      })
+      const data = await res.json()
+
+      data.elements.filter(e => e.type === 'way' && e.geometry).forEach(way => {
+        const positions = way.geometry.flatMap(pt => [pt.lon, pt.lat, 100])
+        const e = viewer.entities.add({
+          polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArrayHeights(positions),
+            width: 3,
+            material: new Cesium.PolylineGlowMaterialProperty({
+              glowPower: 0.1,
+              color: Cesium.Color.fromCssColorString('#57f0c4'),
+            }),
+            clampToGround: true,
+            arcType: Cesium.ArcType.GEODESIC,
+          }
+        })
+        loadedTrailEntities.push(e)
+      })
+
+      if (loadedTrailEntities.length) {
+        showToast(name + ' · ' + loadedTrailEntities.length + ' segments')
+      } else {
+        showToast('No geometry found for this trail')
+      }
+    } catch {
+      showToast('Failed to load trail geometry')
+    }
+  }
+
+  // Expose globally for onclick in innerHTML
+  window.showTrailOnMap = showTrailOnMap
+
+  document.getElementById('closePeak').onclick = () => {
+    document.getElementById('peakPanel').style.display = 'none'
+    loadedTrailEntities.forEach(e => viewer.entities.remove(e))
+    loadedTrailEntities = []
+  }
+
+  document.getElementById('peakFly').onclick = () => {
+    if (!activePeakCoord) return
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(activePeakCoord.lon, activePeakCoord.lat - 0.02, 2500),
+      orientation: { heading: 0, pitch: Cesium.Math.toRadians(-20), roll: 0 },
+      duration: 2.5,
+    })
+  }
+
+  document.getElementById('peakDraw').onclick = () => {
+    if (!activePeakCoord) return
+    document.getElementById('peakPanel').style.display = 'none'
+    drawing = true
+    btnDraw.textContent = '✏️ Drawing… (click globe)'
+    btnDraw.classList.add('active')
+    viewer.canvas.style.cursor = 'crosshair'
+    routeCoords.push(activePeakCoord)
+    addRouteMarker(activePeakCoord.lon, activePeakCoord.lat, activePeakCoord.ele || 0)
+    document.getElementById('btnClear').style.display = 'block'
+  }
+
+  // ── Route drawing ────────────────────────────────────────────────────────────
+  let drawing = false
+  let routeCoords = []
+  let routeEntity = null
+  let routeMarkers = []
+
+  function haversine(a, b) {
+    const R = 6371, r = d => d * Math.PI / 180
+    const dLat = r(b.lat - a.lat), dLon = r(b.lon - a.lon)
+    const h = Math.sin(dLat/2)**2 + Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2
+    return R * 2 * Math.asin(Math.sqrt(h))
+  }
+  function totalDist() {
+    let d = 0
+    for (let i = 1; i < routeCoords.length; i++) d += haversine(routeCoords[i-1], routeCoords[i])
+    return d
+  }
+
+  function addRouteMarker(lon, lat, alt) {
+    const e = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(lon, lat, (alt||0) + 60),
+      point: { pixelSize: 8, color: Cesium.Color.fromCssColorString('#e8702a'), outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
+    })
+    routeMarkers.push(e)
+  }
+
+  function redrawRoute() {
+    if (routeEntity) viewer.entities.remove(routeEntity)
+    if (routeCoords.length < 2) { routeEntity = null; return }
+    const positions = routeCoords.flatMap(c => [c.lon, c.lat, (c.alt||0) + 50])
+    routeEntity = viewer.entities.add({
+      polyline: {
+        positions: Cesium.Cartesian3.fromDegreesArrayHeights(positions),
+        width: 4,
+        material: new Cesium.PolylineGlowMaterialProperty({ glowPower: 0.15, color: Cesium.Color.fromCssColorString('#e8702a') }),
+        clampToGround: false,
+        arcType: Cesium.ArcType.GEODESIC,
+      }
+    })
+    const el = document.getElementById('stats')
+    el.style.display = 'block'
+    document.getElementById('statDist').textContent = totalDist().toFixed(2) + ' km'
+    document.getElementById('statPts').textContent  = routeCoords.length
+  }
+
+  const btnDraw = document.getElementById('btnDraw')
+  btnDraw.onclick = () => {
+    drawing = !drawing
+    btnDraw.textContent = drawing ? '✏️ Drawing… (click globe)' : '✏️ Draw Route'
+    btnDraw.classList.toggle('active', drawing)
+    viewer.canvas.style.cursor = drawing ? 'crosshair' : 'default'
+  }
+
+  document.getElementById('btnClear').onclick = () => {
+    if (routeEntity) { viewer.entities.remove(routeEntity); routeEntity = null }
+    routeMarkers.forEach(e => viewer.entities.remove(e))
+    routeMarkers = []; routeCoords = []
+    drawing = false
+    btnDraw.textContent = '✏️ Draw Route'
+    btnDraw.classList.remove('active')
+    viewer.canvas.style.cursor = 'default'
+    document.getElementById('btnClear').style.display = 'none'
+    document.getElementById('stats').style.display = 'none'
+  }
+
+  // ── GPX upload ───────────────────────────────────────────────────────────────
+  document.getElementById('gpxInput').onchange = function(e) {
+    const file = e.target.files[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const doc = new DOMParser().parseFromString(ev.target.result, 'application/xml')
+      const pts = Array.from(doc.querySelectorAll('trkpt, rtept, wpt'))
+      if (!pts.length) { showToast('No track points found'); return }
+      if (routeEntity) viewer.entities.remove(routeEntity)
+      routeMarkers.forEach(e => viewer.entities.remove(e)); routeMarkers = []
+      routeCoords = pts.map(p => ({
+        lon: parseFloat(p.getAttribute('lon')),
+        lat: parseFloat(p.getAttribute('lat')),
+        alt: parseFloat(p.querySelector('ele')?.textContent || '0'),
+      }))
+      redrawRoute()
+      document.getElementById('btnClear').style.display = 'block'
+      const lons = routeCoords.map(c => c.lon), lats = routeCoords.map(c => c.lat)
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(
+          (Math.min(...lons)+Math.max(...lons))/2,
+          (Math.min(...lats)+Math.max(...lats))/2 - 0.04, 7000),
+        orientation: { heading: 0, pitch: Cesium.Math.toRadians(-30), roll: 0 },
+        duration: 2,
+      })
+      showToast('Loaded ' + routeCoords.length + ' points · ' + totalDist().toFixed(1) + ' km')
+    }
+    reader.readAsText(file); e.target.value = ''
+  }
+
+  // ── Save & Share ─────────────────────────────────────────────────────────────
+  document.getElementById('btnShare').onclick = () => {
+    document.getElementById('shareModal').classList.add('open')
+    document.getElementById('shareUrl').style.display = 'none'
+    document.getElementById('shareUrl').textContent = ''
+    document.getElementById('saveTitle').value = ''
+    document.getElementById('saveDesc').value = ''
+  }
+  document.getElementById('cancelShare').onclick = () => {
+    document.getElementById('shareModal').classList.remove('open')
+  }
+  document.getElementById('confirmShare').onclick = async () => {
+    const title = document.getElementById('saveTitle').value.trim()
+    if (!title) { showToast('Please enter a route name'); return }
+
+    const btn = document.getElementById('confirmShare')
+    btn.textContent = 'Saving…'; btn.disabled = true
+
+    const routeData = {
+      type: 'LineString',
+      coordinates: routeCoords.map(c => [c.lon, c.lat, c.alt || 0])
+    }
+    const dist = totalDist()
+
+    // Post to parent Next.js app via postMessage so it can save to Supabase
+    window.parent.postMessage({
+      type: 'SAVE_ROUTE',
+      payload: {
+        title,
+        description: document.getElementById('saveDesc').value,
+        distance_km: Math.round(dist * 100) / 100,
+        route_data: routeData,
+        date: new Date().toISOString().slice(0, 10),
+      }
+    }, '*')
+
+    // Listen for response with saved ID
+    const handler = (evt) => {
+      if (evt.data?.type !== 'ROUTE_SAVED') return
+      window.removeEventListener('message', handler)
+      btn.textContent = 'Save & Get Link'; btn.disabled = false
+      const id = evt.data.id
+      if (id) {
+        const url = `${window.parent.location.origin}/map?route=${id}`
+        const el = document.getElementById('shareUrl')
+        el.textContent = '🔗 ' + url + ' (click to copy)'
+        el.style.display = 'block'
+        el.onclick = () => { navigator.clipboard.writeText(url); showToast('Link copied!') }
+        showToast('Route saved!')
+      } else {
+        showToast(evt.data.error || 'Sign in to save routes')
+        document.getElementById('shareModal').classList.remove('open')
+      }
+    }
+    window.addEventListener('message', handler)
+    setTimeout(() => { window.removeEventListener('message', handler); btn.textContent = 'Save & Get Link'; btn.disabled = false }, 5000)
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  let toastTimer
+  function showToast(msg) {
+    const el = document.getElementById('toast')
+    el.textContent = msg; el.style.display = 'block'
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => { el.style.display = 'none' }, 3000)
+  }
+
+  // ── Load shared route from parent ────────────────────────────────────────────
+  window.addEventListener('message', (evt) => {
+    if (evt.data?.type !== 'LOAD_ROUTE') return
+    const { points, name } = evt.data
+    if (!Array.isArray(points) || points.length < 2) return
+    // Clear existing route
+    if (routeEntity) { viewer.entities.remove(routeEntity); routeEntity = null }
+    routeMarkers.forEach(e => viewer.entities.remove(e))
+    routeMarkers = []; routeCoords = []
+    // Add each point
+    points.forEach(([lon, lat]) => {
+      routeCoords.push({ lon, lat, alt: 0 })
+      addRouteMarker(lon, lat, 0)
+    })
+    redrawRoute()
+    document.getElementById('btnClear').style.display = 'inline-block'
+    showToast(`Loaded route: ${name || 'Shared route'}`)
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(points[0][0], points[0][1], 8000),
+      duration: 2
+    })
+  })
+
+  // ── Boot ─────────────────────────────────────────────────────────────────────
+  loadPeaks()
+</script>
+</body>
+</html>
