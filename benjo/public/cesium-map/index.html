@@ -83,17 +83,26 @@
     /* Controls */
     #controls {
       position: absolute; top: 80px; right: 16px; z-index: 100;
-      display: flex; flex-direction: column; gap: 7px;
+      display: flex; flex-direction: column; gap: 14px;
+      background: rgba(255,255,255,0.1); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--white-30); border-radius: 1rem;
+      padding: 14px;
+    }
+    #controls .grp { display: flex; flex-direction: column; gap: 6px; }
+    #controls .grp-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--white-30); padding: 0 2px 2px;
     }
     .ctrl-btn {
-      background: rgba(255,255,255,0.12); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: rgba(255,255,255,0.08);
       border: 1px solid var(--white-30); border-radius: 9999px;
       color: var(--white-80); font-size: 12px; font-family: var(--font-sans);
-      font-weight: 500; padding: 8px 14px; cursor: pointer; transition: all 0.15s;
+      font-weight: 500; padding: 8px 14px; cursor: pointer; transition: all 0.15s ease, transform 0.15s var(--ease-hero);
       text-align: left;
     }
-    .ctrl-btn:hover { background: rgba(255,255,255,0.2); border-color: var(--bronze); color: var(--bronze); }
-    .ctrl-btn.on { color: var(--bronze); border-color: rgba(232,112,42,0.6); }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.2); border-color: var(--bronze); color: var(--bronze); transform: scale(1.02); }
+    .ctrl-btn:active { transform: scale(0.97); }
+    .ctrl-btn.on { color: var(--bronze); border-color: rgba(232,112,42,0.6); background: rgba(232,112,42,0.12); }
 
     /* Toast */
     #toast {
@@ -196,13 +205,18 @@
 
 <!-- Controls -->
 <div id="controls" class="intro-fade">
-  <button class="ctrl-btn on" id="btnPeaks">⛰ Summits</button>
-  <button class="ctrl-btn on" id="btnTrails">🥾 Hiking Trails</button>
-  <button class="ctrl-btn" id="btnLabels">🏷 OSM Labels</button>
-  <div style="height:1px;background:rgba(255,255,255,0.1);margin:2px 0"></div>
-  <button class="ctrl-btn" id="btnWales">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales</button>
-  <button class="ctrl-btn" id="btnSnowdon">⛰ Snowdon</button>
-  <button class="ctrl-btn" id="btnBrecon">⛰ Brecon</button>
+  <div class="grp">
+    <div class="grp-label">Layers</div>
+    <button class="ctrl-btn on" id="btnPeaks">⛰ Summits</button>
+    <button class="ctrl-btn on" id="btnTrails">🥾 Hiking Trails</button>
+    <button class="ctrl-btn" id="btnLabels">🏷 OSM Labels</button>
+  </div>
+  <div class="grp">
+    <div class="grp-label">Jump to</div>
+    <button class="ctrl-btn" id="btnWales">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales</button>
+    <button class="ctrl-btn" id="btnSnowdon">⛰ Snowdon</button>
+    <button class="ctrl-btn" id="btnBrecon">⛰ Brecon</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -226,17 +240,39 @@
   Cesium.Ion.defaultAccessToken = TOKEN
 
   const viewer = new Cesium.Viewer('cesiumContainer', {
-    terrain: Cesium.Terrain.fromWorldTerrain({ requestWaterMask: true, requestVertexNormals: true }),
+    terrain: Cesium.Terrain.fromWorldTerrain({ requestWaterMask: false, requestVertexNormals: false }),
     imageryProvider: false,
     baseLayerPicker: false, geocoder: false, homeButton: false,
     sceneModePicker: false, navigationHelpButton: false,
     animation: false, timeline: false, fullscreenButton: false,
     infoBox: false, selectionIndicator: false, shadows: false, shouldAnimate: false,
+    requestRenderMode: true, maximumRenderTimeChange: Infinity,
   })
 
-  viewer.scene.globe.enableLighting = true
-  viewer.scene.skyAtmosphere.show = true
-  viewer.scene.globe.atmosphereLightIntensity = 20.0
+  // Flat, constant daylight — no real-world sun position, so the globe never
+  // darkens with time of day.
+  viewer.scene.globe.enableLighting = false
+  viewer.scene.globe.dynamicAtmosphereLighting = false
+  viewer.scene.skyAtmosphere.show = false
+  viewer.scene.globe.showGroundAtmosphere = false
+  viewer.scene.fog.enabled = false
+
+  // Lighter terrain/tile budget so panning around Wales stays smooth.
+  viewer.scene.globe.maximumScreenSpaceError = 3
+  viewer.scene.globe.tileCacheSize = 200
+  viewer.scene.globe.preloadSiblings = false
+
+  // UK-only for now: stop users from zooming out to a whole-Earth view or
+  // panning away to other continents.
+  const UK_BOUNDS = Cesium.Rectangle.fromDegrees(-11, 49, 2.5, 61)
+  viewer.scene.screenSpaceCameraController.maximumZoomDistance = 1200000
+  viewer.scene.screenSpaceCameraController.minimumZoomDistance = 300
+  viewer.camera.moveEnd.addEventListener(() => {
+    const pos = viewer.camera.positionCartographic
+    if (!Cesium.Rectangle.contains(UK_BOUNDS, pos)) {
+      viewer.camera.flyTo({ ...WALES_VIEW, duration: 1.2 })
+    }
+  })
 
   // ── Imagery layers ───────────────────────────────────────────────────────────
   let trailsLayer, labelsLayer
@@ -271,6 +307,15 @@
     destination: Cesium.Cartesian3.fromDegrees(-3.78, 52.0, 120000),
     orientation: { heading: 0, pitch: Cesium.Math.toRadians(-35), roll: 0 },
   }
+  const WALES_WIDE_VIEW = {
+    destination: Cesium.Cartesian3.fromDegrees(-3.78, 52.0, 700000),
+    orientation: { heading: 0, pitch: Cesium.Math.toRadians(-50), roll: 0 },
+  }
+  // Start framed on Wales/the UK immediately, instead of Cesium's default
+  // whole-Earth view, so there's no global view flash and no burst of
+  // far-zoomed tile requests on first paint.
+  viewer.camera.setView(WALES_WIDE_VIEW)
+
   function flyToWales() {
     viewer.camera.flyTo({ ...WALES_VIEW, duration: 2 })
   }
