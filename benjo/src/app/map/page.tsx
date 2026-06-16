@@ -454,7 +454,7 @@ export default function MapPage() {
                   onChange={(e) => setSaveForm({ ...saveForm, title: e.target.value })}
                   placeholder="e.g. Snowdon via Ranger Path"
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white outline-none placeholder:text-white/20 focus:ring-1"
-                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', ringColor: '#e8702a' }}
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
                 />
               </div>
               <div>
