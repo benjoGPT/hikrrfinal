@@ -1,0 +1,7 @@
+{
+  "name": "hikrrfinal",
+  "version": "1.0.0",
+  "dependencies": {
+    "next": "16.2.9"
+  }
+}
