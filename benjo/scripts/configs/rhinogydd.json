@@ -1,11 +1,55 @@
 {
-  "bbox": { "west": -4.08, "east": -3.95, "south": 52.76, "north": 52.86, "gridW": 200, "gridH": 160, "zoom": 14 },
+  "bbox": {
+    "west": -4.075,
+    "east": -3.965,
+    "south": 52.78,
+    "north": 52.855,
+    "gridW": 320,
+    "gridH": 220,
+    "zoom": 14
+  },
   "waypoints": [
-    { "name": "Cwm Bychan",  "lon": -4.0533, "lat": 52.8453, "poi": true,  "type": "Start / Finish" },
-    { "name": "Rhinog Fawr", "lon": -4.0317, "lat": 52.8367, "poi": true,  "type": "Summit" },
-    { "name": "Rhinog Fach", "lon": -4.0258, "lat": 52.8242, "poi": true,  "type": "Summit" },
-    { "name": "Y Llethr",    "lon": -4.0119, "lat": 52.8094, "poi": true,  "type": "Summit" },
-    { "name": "Diffwys",     "lon": -3.9967, "lat": 52.7892, "poi": true,  "type": "Summit" },
-    { "name": "Cwm Bychan",  "lon": -4.0533, "lat": 52.8453, "poi": false, "type": "Start / Finish" }
+    {
+      "name": "Cwm Bychan",
+      "lon": -4.0533,
+      "lat": 52.8453,
+      "poi": true,
+      "type": "Start / Finish"
+    },
+    {
+      "name": "Rhinog Fawr",
+      "lon": -3.9954,
+      "lat": 52.8413,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Rhinog Fach",
+      "lon": -3.9817,
+      "lat": 52.8258,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Y Llethr",
+      "lon": -3.9869,
+      "lat": 52.8136,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Diffwys",
+      "lon": -3.9869,
+      "lat": 52.7926,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Cwm Bychan",
+      "lon": -4.0533,
+      "lat": 52.8453,
+      "poi": false,
+      "type": "Start / Finish"
+    }
   ]
 }

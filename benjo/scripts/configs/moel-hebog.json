@@ -1,11 +1,55 @@
 {
-  "bbox": { "west": -4.20, "east": -4.08, "south": 52.98, "north": 53.06, "gridW": 220, "gridH": 200, "zoom": 14 },
+  "bbox": {
+    "west": -4.185,
+    "east": -4.055,
+    "south": 52.985,
+    "north": 53.075,
+    "gridW": 280,
+    "gridH": 380,
+    "zoom": 14
+  },
   "waypoints": [
-    { "name": "Beddgelert",          "lon": -4.1019, "lat": 53.0017, "poi": true,  "type": "Start / Finish" },
-    { "name": "Moel Hebog",          "lon": -4.1183, "lat": 53.0007, "poi": true,  "type": "Summit" },
-    { "name": "Moel yr Ogof",        "lon": -4.1186, "lat": 53.0103, "poi": true,  "type": "Summit" },
-    { "name": "Trum y Ddysgl",       "lon": -4.1274, "lat": 53.0344, "poi": true,  "type": "Summit" },
-    { "name": "Mynydd Drws-y-coed",  "lon": -4.1331, "lat": 53.0429, "poi": true,  "type": "Summit" },
-    { "name": "Beddgelert",          "lon": -4.1019, "lat": 53.0017, "poi": false, "type": "Start / Finish" }
+    {
+      "name": "Beddgelert",
+      "lon": -4.1019,
+      "lat": 53.0017,
+      "poi": true,
+      "type": "Start / Finish"
+    },
+    {
+      "name": "Moel Hebog",
+      "lon": -4.1398,
+      "lat": 53.0002,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Moel yr Ogof",
+      "lon": -4.1525,
+      "lat": 53.0083,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Trum y Ddysgl",
+      "lon": -4.0823,
+      "lat": 53.0425,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Mynydd Drws-y-coed",
+      "lon": -4.1003,
+      "lat": 53.0633,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Beddgelert",
+      "lon": -4.1019,
+      "lat": 53.0017,
+      "poi": false,
+      "type": "Start / Finish"
+    }
   ]
 }

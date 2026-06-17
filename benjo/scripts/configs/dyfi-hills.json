@@ -1,10 +1,48 @@
 {
-  "bbox": { "west": -4.00, "east": -3.85, "south": 52.59, "north": 52.66, "gridW": 220, "gridH": 180, "zoom": 14 },
+  "bbox": {
+    "west": -3.9696,
+    "east": -3.8573,
+    "south": 52.6084,
+    "north": 52.6585,
+    "gridW": 345,
+    "gridH": 254,
+    "zoom": 14
+  },
   "waypoints": [
-    { "name": "Forge",              "lon": -3.90, "lat": 52.6450, "poi": true,  "type": "Start / Finish" },
-    { "name": "Tarrenhendre",       "lon": -3.9064, "lat": 52.6356, "poi": true,  "type": "Summit" },
-    { "name": "Tarren y Gesail",    "lon": -3.9465, "lat": 52.6187, "poi": true,  "type": "Summit" },
-    { "name": "Maesglase",          "lon": -3.8804, "lat": 52.6482, "poi": true,  "type": "Summit" },
-    { "name": "Forge",              "lon": -3.90, "lat": 52.6450, "poi": false, "type": "Start / Finish" }
+    {
+      "name": "Forge",
+      "lon": -3.9,
+      "lat": 52.645,
+      "poi": true,
+      "type": "Start / Finish"
+    },
+    {
+      "name": "Tarrenhendre",
+      "lon": -3.9064,
+      "lat": 52.6356,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Tarren y Gesail",
+      "lon": -3.9465,
+      "lat": 52.6187,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Maesglase",
+      "lon": -3.8804,
+      "lat": 52.6482,
+      "poi": true,
+      "type": "Summit"
+    },
+    {
+      "name": "Forge",
+      "lon": -3.9,
+      "lat": 52.645,
+      "poi": false,
+      "type": "Start / Finish"
+    }
   ]
 }
