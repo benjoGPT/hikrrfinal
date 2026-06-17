@@ -1,8 +1,8 @@
 'use client'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Mountain, AlertTriangle, Route, ArrowLeft } from 'lucide-react'
 import type { MountainRange } from '@/data/ranges'
+import GlassButton from './ui/GlassButton'
 
 const fadeUp = {
   initial: { opacity: 0, y: 28 },
@@ -86,26 +86,22 @@ export default function RangeDetailSections({ range }: { range: MountainRange })
         </ul>
       </motion.div>
 
-      {/* Gallery / model placeholder */}
-      <motion.div {...fadeUp} className="mt-14">
-        <h2 className="font-playfair italic text-white text-2xl sm:text-3xl">Gallery &amp; 3D model</h2>
-        {range.modelAsset ? (
+      {/* Gallery / full immersive model */}
+      {range.modelAsset && (
+        <motion.div {...fadeUp} className="mt-14">
+          <h2 className="font-playfair italic text-white text-2xl sm:text-3xl">Full immersive 3D experience</h2>
+          <p className="text-white/50 text-xs mt-1.5">Built from real elevation data — drag, orbit and walk the actual terrain.</p>
           <div className="relative w-full h-[50vh] rounded-3xl overflow-hidden border border-white/20 mt-6">
             <iframe src={range.modelAsset} className="absolute inset-0 w-full h-full border-0" title={`${range.name} 3D Map`} allowFullScreen />
           </div>
-        ) : (
-          <div className="rounded-3xl border border-white/15 bg-white/5 backdrop-blur-md p-10 mt-6 text-center">
-            <p className="text-white/60 text-sm">A full draggable 3D terrain model for {range.name} is in the works.</p>
-            <p className="text-white/40 text-xs mt-1.5">Photo gallery and live model coming soon.</p>
-          </div>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* CTA */}
       <motion.div {...fadeUp} className="mt-16 text-center">
-        <Link href="/routes" className="no-underline inline-flex items-center gap-2 text-sm font-medium text-white/80 hover:text-white border border-white/25 rounded-full px-6 py-3 transition-colors">
-          <ArrowLeft size={15} /> Back to all nine ranges
-        </Link>
+        <GlassButton href="/routes" variant="primary">
+          <ArrowLeft size={15} className="inline -ml-1 mr-1" /> Back to all nine ranges
+        </GlassButton>
       </motion.div>
     </div>
   )

@@ -1,6 +1,7 @@
 import Nav from '@/components/Nav'
 import SpotlightReveal from '@/components/SpotlightReveal'
 import RangeCard from '@/components/RangeCard'
+import AnimatedMountainHeading from '@/components/sections/AnimatedMountainHeading'
 import { RANGES } from '@/data/ranges'
 
 export default function RoutesPage() {
@@ -12,20 +13,10 @@ export default function RoutesPage() {
         className="w-full h-[70dvh] pt-16"
         base={
           <div className="w-full h-full bg-black flex flex-col items-center justify-center text-center px-5">
-            <h1 className="text-white" style={{ lineHeight: 0.95 }}>
-              <span className="block font-playfair italic font-normal text-4xl sm:text-6xl md:text-7xl"
-                style={{ letterSpacing: '-0.05em' }}>
-                The Nine Ranges
-              </span>
-              <span className="block font-normal text-4xl sm:text-6xl md:text-7xl -mt-1"
-                style={{ letterSpacing: '-0.08em' }}>
-                of Wales
-              </span>
-            </h1>
-            <p className="mt-5 max-w-lg text-sm text-white/60 leading-relaxed">
-              Move your cursor to reveal the relief beneath. Every major Snowdonia and Mid-Wales
-              massif, mapped peak by peak — pick a range to drag, orbit and walk it for real.
-            </p>
+            <AnimatedMountainHeading
+              lines={['The Nine Ranges', 'of Wales']}
+              subtitle="Move your cursor to reveal the relief beneath. Every major Snowdonia and Mid-Wales massif, mapped peak by peak — pick a range to drag, orbit and walk it for real."
+            />
           </div>
         }
         revealed={
@@ -55,3 +46,4 @@ export default function RoutesPage() {
     </div>
   )
 }
+

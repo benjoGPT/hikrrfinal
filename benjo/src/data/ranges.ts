@@ -17,6 +17,17 @@ export interface SuggestedRoute {
   durationHours: string
 }
 
+export type ModelStyle =
+  | 'broad-plateau'
+  | 'jagged-ridge'
+  | 'horseshoe-massif'
+  | 'compact-rugged'
+  | 'slate-pyramids'
+  | 'broken-wild'
+  | 'cliff-bowl'
+  | 'long-ridge'
+  | 'rolling-hills'
+
 export interface MountainRange {
   id: string
   slug: string
@@ -27,20 +38,33 @@ export interface MountainRange {
   longDescription: string
   difficulty: string
   terrainType: string
+  /** Short label describing the character of the terrain, used on cards/detail headers. */
+  terrainProfile: string
   bestFor: string[]
   keyPeaks: Peak[]
+  /** All peaks, alias of keyPeaks kept for the spec's `peaks` field. */
+  peaks: Peak[]
+  peakCount: number
+  highestPeak: Peak
   suggestedRoutes: SuggestedRoute[]
   warnings: string[]
-  /** Path to an interactive 3D model viewer, or null if not yet built. */
+  /** Path to a real-elevation 3D model viewer (iframe), or null if not yet built. */
   modelAsset: string | null
+  /** Deterministic seed for the procedural terrain preview. */
+  modelSeed: number
+  /** Shape family used to generate the procedural terrain preview. */
+  modelStyle: ModelStyle
   /** Placeholder geographic bounds for future real-map integration. */
   mapBounds: { north: number; south: number; east: number; west: number }
-  /** Placeholder hero image path. */
+  /** Hero/card image path. TODO: replace generated placeholder with a real photo. */
   heroImage: string
   gradient: string
+  accentColor: string
 }
 
-export const RANGES: MountainRange[] = [
+type RawRange = Omit<MountainRange, 'peaks' | 'peakCount' | 'highestPeak'>
+
+const RAW_RANGES: RawRange[] = [
   {
     id: 'carneddau',
     slug: 'carneddau',
@@ -52,6 +76,7 @@ export const RANGES: MountainRange[] = [
       'The Carneddau form the single biggest area of high ground in Wales — a vast, rolling massif of grass and boulder summits north of the Ogwen Valley. Unlike the jagged drama of the Glyderau or Snowdon, the Carneddau are broad-backed and remote, with long ridge walks linking eight summits over 750m. Feral ponies roam the high plateau, and the sense of scale and isolation here is unmatched anywhere else in Wales.',
     difficulty: 'Moderate – Hard',
     terrainType: 'Broad grassy plateau, boulder fields, exposed ridgelines',
+    terrainProfile: 'Vast rolling plateau with long connecting ridges',
     bestFor: ['Long ridge days', 'Solitude', 'Wild camping', 'Ponies & wildlife'],
     keyPeaks: [
       { name: 'Pen yr Ole Wen', heightMetres: 978, description: 'The steep southern gateway to the range, rising directly above Llyn Ogwen.', infoNote: 'Often climbed first via a relentless grassy/rocky direct ascent from Ogwen.', gridRef: 'TBC', difficultyNote: 'Hard – steep, unrelenting ascent', position: { x: 18, y: 70 } },
@@ -74,9 +99,12 @@ export const RANGES: MountainRange[] = [
       'Exposed to severe wind chill even in summer.',
     ],
     modelAsset: '/carneddau-map/index.html',
+    modelSeed: 1,
+    modelStyle: 'broad-plateau',
     mapBounds: { north: 53.18, south: 53.10, east: -3.95, west: -4.05 },
-    heroImage: '/images/ranges/carneddau-hero.jpg',
+    heroImage: '/images/ranges/carneddau.jpg',
     gradient: 'from-[#2c2a26] via-[#3c4a30] to-[#0a0a0c]',
+    accentColor: '#7a9a5a',
   },
   {
     id: 'glyderau',
@@ -89,6 +117,7 @@ export const RANGES: MountainRange[] = [
       'South of the Ogwen Valley, the Glyderau rise into a chaotic skyline of broken rock, scree and exposed ridges. This is the most distinctively "alpine" landscape in Wales — Tryfan’s spiky profile and the wind-carved boulder field on Glyder Fach (the Cantilever Stone and Castell y Gwynt) make this a range built for scramblers and rock-lovers as much as walkers.',
     difficulty: 'Hard – Severe',
     terrainType: 'Shattered rock, scree, boulder fields, scrambling ridges',
+    terrainProfile: 'Jagged shattered rock spikes and broken ridgelines',
     bestFor: ['Scrambling', 'Iconic rock features', 'Photography', 'Classic ridge days'],
     keyPeaks: [
       { name: 'Tryfan', heightMetres: 917, description: 'The unmistakable three-pronged peak visible from across the valley, Wales’ best-loved scramble.', infoNote: 'The North Ridge scramble is a rite of passage; the summit "Adam and Eve" stones are a famous leap.', gridRef: 'TBC', difficultyNote: 'Severe via North Ridge, hard by tourist path', position: { x: 20, y: 65 } },
@@ -111,9 +140,12 @@ export const RANGES: MountainRange[] = [
       'The summit plateau boulder field is notoriously disorientating in cloud.',
     ],
     modelAsset: '/glyderau-map/index.html',
+    modelSeed: 2,
+    modelStyle: 'jagged-ridge',
     mapBounds: { north: 53.13, south: 53.08, east: -4.00, west: -4.10 },
-    heroImage: '/images/ranges/glyderau-hero.jpg',
+    heroImage: '/images/ranges/glyderau.jpg',
     gradient: 'from-[#2a2118] via-[#6e7a3f] to-[#0a0a0c]',
+    accentColor: '#9aa468',
   },
   {
     id: 'snowdon-massif',
@@ -126,6 +158,7 @@ export const RANGES: MountainRange[] = [
       'Yr Wyddfa (Snowdon) and its satellite ridges form the most famous mountain landscape in Wales. At its heart, the Snowdon Horseshoe links Crib Goch’s knife-edge arete, the summit of Yr Wyddfa itself, and the long ridge of Y Lliwedd around a spectacular glacial cwm. To the west, a quieter chain of lower summits — Moel Eilio, Foel Gron, Moel Cynghorion and Yr Aran — offers gentler walking with some of the best views of the high peaks.',
     difficulty: 'Moderate – Severe (route dependent)',
     terrainType: 'High rocky arêtes, glacial cwms, scree, exposed ridgelines',
+    terrainProfile: 'Central summit ringed by a dramatic horseshoe ridge',
     bestFor: ['Bagging the highest summit in Wales', 'Classic scrambling', 'Sunrise hikes', 'Railway-assisted ascents'],
     keyPeaks: [
       { name: 'Yr Wyddfa', welshName: 'Snowdon', heightMetres: 1085, description: 'The highest peak in Wales, topped by the Hafod Eryri visitor centre and reachable by mountain railway.', infoNote: 'On a clear day the summit view reputedly stretches to Ireland, Scotland and England.', gridRef: 'TBC', difficultyNote: 'Moderate via Llanberis/Pyg, Severe via Crib Goch', position: { x: 48, y: 48 } },
@@ -148,9 +181,12 @@ export const RANGES: MountainRange[] = [
       'Weather changes fast at altitude even when Llanberis below is clear and sunny.',
     ],
     modelAsset: '/snowdon-map/index.html',
+    modelSeed: 3,
+    modelStyle: 'horseshoe-massif',
     mapBounds: { north: 53.09, south: 53.03, east: -4.02, west: -4.12 },
     gradient: 'from-[#1c2433] via-[#3c5570] to-[#0a0a0c]',
-    heroImage: '/images/ranges/snowdon-hero.jpg',
+    heroImage: '/images/ranges/yr-wyddfa.jpg',
+    accentColor: '#5a82b0',
   },
   {
     id: 'moel-hebog',
@@ -163,6 +199,7 @@ export const RANGES: MountainRange[] = [
       'West of the Snowdon massif, the Moel Hebog range offers some of the least-crowded walking in Snowdonia. Moel Hebog’s steep, craggy profile dominates the view from Beddgelert, while the connecting ridge north to Mynydd Drws-y-coed and Trum y Ddysgl gives a surprisingly narrow, exposed walk for relatively modest heights. Caves on Moel yr Ogof are said to have sheltered Owain Glyndŵr.',
     difficulty: 'Moderate – Hard',
     terrainType: 'Steep grass and crag, narrow connecting ridges, quiet valleys',
+    terrainProfile: 'Steep, compact and rugged ridge chain',
     bestFor: ['Escaping the crowds', 'History (Glyndŵr’s cave)', 'Half-day ridge walks'],
     keyPeaks: [
       { name: 'Moel Hebog', heightMetres: 782, description: 'The dominant peak above Beddgelert, with a steep, craggy southern face.', infoNote: 'Welsh for "Hawk’s Hill" — the summit gives a superb panorama back to Snowdon.', gridRef: 'TBC', difficultyNote: 'Moderate, steep ascent', position: { x: 40, y: 70 } },
@@ -183,9 +220,12 @@ export const RANGES: MountainRange[] = [
       'Steep grass becomes treacherously slick after rain.',
     ],
     modelAsset: null,
+    modelSeed: 4,
+    modelStyle: 'compact-rugged',
     mapBounds: { north: 53.04, south: 52.98, east: -4.10, west: -4.20 },
-    heroImage: '/images/ranges/moel-hebog-hero.jpg',
+    heroImage: '/images/ranges/moel-hebog.jpg',
     gradient: 'from-[#262321] via-[#4a4030] to-[#0a0a0c]',
+    accentColor: '#a4854f',
   },
   {
     id: 'moelwynion',
@@ -198,6 +238,7 @@ export const RANGES: MountainRange[] = [
       'The Moelwynion sit above the slate towns of Blaenau Ffestiniog and Tanygrisiau, a landscape where mining history and wild moorland collide. Cnicht’s pointed summit — nicknamed "the Welsh Matterhorn" — is the range’s most photographed peak, while Moel Siabod stands apart to the north as a dramatic outlier with one of the best ridge approaches in Snowdonia.',
     difficulty: 'Moderate',
     terrainType: 'Slate spoil, heather moorland, rocky knolls, old quarry tracks',
+    terrainProfile: 'Sharper slate-ridged pyramidal summits',
     bestFor: ['Industrial history', 'Quieter rocky scrambles', 'Varied half-day walks'],
     keyPeaks: [
       { name: 'Moel Siabod', heightMetres: 872, description: 'A bold outlier north of the main group, with a fine rocky ridge approach via Daear Ddu.', infoNote: 'The Daear Ddu ridge is one of the best easy scrambles in Snowdonia.', gridRef: 'TBC', difficultyNote: 'Moderate – Hard via the ridge', position: { x: 70, y: 18 } },
@@ -220,9 +261,12 @@ export const RANGES: MountainRange[] = [
       'Slate scree on Moelwyn Mawr’s flanks is loose and slippery.',
     ],
     modelAsset: null,
+    modelSeed: 5,
+    modelStyle: 'slate-pyramids',
     mapBounds: { north: 53.01, south: 52.93, east: -3.92, west: -4.05 },
-    heroImage: '/images/ranges/moelwynion-hero.jpg',
+    heroImage: '/images/ranges/moelwynion.jpg',
     gradient: 'from-[#252220] via-[#5a5240] to-[#0a0a0c]',
+    accentColor: '#9a9272',
   },
   {
     id: 'rhinogydd',
@@ -235,6 +279,7 @@ export const RANGES: MountainRange[] = [
       'The Rhinogydd are widely regarded as the toughest walking terrain in Wales — not because of height, but because of the sheer, unrelenting roughness underfoot. Tightly packed gritstone outcrops, deep heather and a near-total absence of paths make this range a serious proposition even for experienced hillwalkers, rewarding them with a sense of true wilderness rare anywhere else in Britain.',
     difficulty: 'Hard',
     terrainType: 'Bare gritstone outcrops, deep heather, pathless terrain',
+    terrainProfile: 'Rough, broken and wild trackless terrain',
     bestFor: ['True wilderness', 'Navigation practice', 'Avoiding crowds entirely'],
     keyPeaks: [
       { name: 'Rhinog Fawr', heightMetres: 720, description: 'The most famous summit in the range, a rocky tower above Cwm Bychan.', infoNote: 'The approach through boulder-strewn heather is notoriously slow going.', gridRef: 'TBC', difficultyNote: 'Hard, rough pathless terrain', position: { x: 30, y: 38 } },
@@ -257,9 +302,12 @@ export const RANGES: MountainRange[] = [
       'Mobile signal is poor to non-existent across most of the range.',
     ],
     modelAsset: null,
+    modelSeed: 6,
+    modelStyle: 'broken-wild',
     mapBounds: { north: 52.86, south: 52.76, east: -3.95, west: -4.08 },
-    heroImage: '/images/ranges/rhinogydd-hero.jpg',
+    heroImage: '/images/ranges/rhinogydd.jpg',
     gradient: 'from-[#211f1c] via-[#46523a] to-[#0a0a0c]',
+    accentColor: '#6a7a52',
   },
   {
     id: 'cadair-idris',
@@ -272,6 +320,7 @@ export const RANGES: MountainRange[] = [
       'Cadair Idris — "the Chair of Idris" — rises dramatically above Dolgellau and the Mawddach estuary. Legend holds that anyone who sleeps on its summit wakes either a poet or a madman. The horseshoe ridge around the deep glacial cwm of Llyn Cau is one of the most complete and visually striking in Wales, combining accessible paths with a genuinely mountainous atmosphere.',
     difficulty: 'Moderate – Hard',
     terrainType: 'Glacial cwm, rocky ridge, steep scree paths',
+    terrainProfile: 'Dramatic cliff-rimmed bowl around a glacial lake',
     bestFor: ['Mythology & legend', 'A complete horseshoe in a day', 'Dramatic lake views'],
     keyPeaks: [
       { name: 'Penygadair', heightMetres: 893, description: 'The highest point of Cadair Idris, with a small summit shelter and sweeping coastal views.', infoNote: 'Legend says a night alone on this summit makes you a poet or a madman by morning.', gridRef: 'TBC', difficultyNote: 'Moderate', position: { x: 46, y: 42 } },
@@ -293,9 +342,12 @@ export const RANGES: MountainRange[] = [
       'Cloud forms quickly over the cwm, obscuring the steep drops near the rim.',
     ],
     modelAsset: null,
+    modelSeed: 7,
+    modelStyle: 'cliff-bowl',
     mapBounds: { north: 52.73, south: 52.66, east: -3.85, west: -3.98 },
-    heroImage: '/images/ranges/cadair-idris-hero.jpg',
+    heroImage: '/images/ranges/cadair-idris.jpg',
     gradient: 'from-[#1f1d1a] via-[#4a4a3a] to-[#0a0a0c]',
+    accentColor: '#8a8866',
   },
   {
     id: 'aran-fawddwy',
@@ -308,6 +360,7 @@ export const RANGES: MountainRange[] = [
       'The Aran ridge holds the highest summit in Wales south of Snowdonia’s northern peaks, yet sees a fraction of the visitors. A long approach across rough moorland keeps the crowds away, leaving a genuinely remote ridge walk above the steep eastern corrie overlooking Llyn Tegid (Bala Lake). This is classic out-and-back ridge territory, prized by those seeking solitude over spectacle.',
     difficulty: 'Moderate – Hard',
     terrainType: 'Moorland approach, grassy ridge, steep eastern corrie',
+    terrainProfile: 'Long, high and remote smooth-backed ridge',
     bestFor: ['Solitude', 'A genuine wilderness feel', 'Long approach walks'],
     keyPeaks: [
       { name: 'Aran Fawddwy', heightMetres: 905, description: 'The highest summit south of Snowdonia’s main peaks, with a steep drop to Creiglyn Dyfi.', infoNote: 'The highest point in Wales outside the Snowdon, Glyderau and Carneddau ranges.', gridRef: 'TBC', difficultyNote: 'Moderate – Hard, long approach', position: { x: 46, y: 44 } },
@@ -329,9 +382,12 @@ export const RANGES: MountainRange[] = [
       'Help is far away here; mobile coverage is unreliable across the whole range.',
     ],
     modelAsset: null,
+    modelSeed: 8,
+    modelStyle: 'long-ridge',
     mapBounds: { north: 52.82, south: 52.76, east: -3.65, west: -3.78 },
-    heroImage: '/images/ranges/aran-fawddwy-hero.jpg',
+    heroImage: '/images/ranges/aran-fawddwy.jpg',
     gradient: 'from-[#201e1b] via-[#414a36] to-[#0a0a0c]',
+    accentColor: '#6e7a58',
   },
   {
     id: 'dyfi-hills',
@@ -344,6 +400,7 @@ export const RANGES: MountainRange[] = [
       'South of Cadair Idris and the Arans, the Dyfi Hills form a quieter, more rounded landscape of grassy and heather summits overlooking the Dyfi Valley and the old mining village of Dylife. These hills rarely top 700m but reward visitors with wide-open views, genuine peace, and a strong sense of being well off the beaten track even by Snowdonia’s standards.',
     difficulty: 'Easy – Moderate',
     terrainType: 'Rolling grass and heather moorland, forestry tracks, old mine workings',
+    terrainProfile: 'Soft, rolling high hills with gentle ridgelines',
     bestFor: ['Easier days out', 'Birdwatching (red kites)', 'Quiet exploration'],
     keyPeaks: [
       { name: 'Tarrenhendre', heightMetres: 678, description: 'A broad grassy summit at the northern end of the Dyfi Hills, with views to Cadair Idris.', infoNote: 'A good vantage point looking north to the Cadair Idris horseshoe.', gridRef: 'TBC', difficultyNote: 'Easy – Moderate', position: { x: 30, y: 20 } },
@@ -365,11 +422,21 @@ export const RANGES: MountainRange[] = [
       'Boggy ground is common after rain, even in summer.',
     ],
     modelAsset: null,
+    modelSeed: 9,
+    modelStyle: 'rolling-hills',
     mapBounds: { north: 52.66, south: 52.58, east: -3.68, west: -3.85 },
-    heroImage: '/images/ranges/dyfi-hills-hero.jpg',
+    heroImage: '/images/ranges/dyfi-hills.jpg',
     gradient: 'from-[#1d1c19] via-[#4a5238] to-[#0a0a0c]',
+    accentColor: '#7e8a5c',
   },
 ]
+
+export const RANGES: MountainRange[] = RAW_RANGES.map(r => ({
+  ...r,
+  peaks: r.keyPeaks,
+  peakCount: r.keyPeaks.length,
+  highestPeak: r.keyPeaks.reduce((a, b) => (b.heightMetres > a.heightMetres ? b : a), r.keyPeaks[0]),
+}))
 
 export function getRangeBySlug(slug: string): MountainRange | undefined {
   return RANGES.find(r => r.slug === slug)

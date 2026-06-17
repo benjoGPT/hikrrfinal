@@ -1,7 +1,10 @@
 'use client'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import PeakMarker from './PeakMarker'
 import type { MountainRange } from '@/data/ranges'
+
+const RangeTerrainCanvas = dynamic(() => import('./three/RangeTerrainCanvas'), { ssr: false })
 
 export default function TerrainPanel({ range }: { range: MountainRange }) {
   return (
@@ -26,10 +29,15 @@ export default function TerrainPanel({ range }: { range: MountainRange }) {
         transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      {/* mountain silhouette */}
-      <svg className="absolute inset-x-0 bottom-0 w-full h-2/3 opacity-30" viewBox="0 0 100 50" preserveAspectRatio="none">
-        <polygon points="0,50 0,30 15,12 28,28 40,8 55,26 68,4 80,22 92,14 100,30 100,50" fill="white" />
-      </svg>
+      {/* 3D terrain model */}
+      <div className="absolute inset-0">
+        <RangeTerrainCanvas
+          seed={range.modelSeed}
+          style={range.modelStyle}
+          accentColor={range.accentColor}
+          scrollLinked
+        />
+      </div>
 
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-black/50 border border-white/20 backdrop-blur-md px-3 py-1.5 text-[11px] font-medium text-white/70">
@@ -37,6 +45,7 @@ export default function TerrainPanel({ range }: { range: MountainRange }) {
         </span>
       </div>
 
+      {/* 2D peak marker overlay above the 3D canvas */}
       {range.keyPeaks.map(peak => (
         <PeakMarker key={peak.name} peak={peak} />
       ))}
