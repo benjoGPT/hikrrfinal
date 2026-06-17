@@ -1,15 +1,5 @@
-import Nav from '@/components/Nav'
+import { redirect } from 'next/navigation'
 
-export default function GlyderauPage() {
-  return (
-    <div className="relative w-full bg-black" style={{ height: '100dvh' }}>
-      <Nav />
-      <iframe
-        src="/glyderau-map/index.html"
-        className="absolute inset-0 w-full h-full border-0"
-        title="Glyderau 3D Map"
-        allowFullScreen
-      />
-    </div>
-  )
+export default function GlyderauRedirect() {
+  redirect('/ranges/glyderau')
 }

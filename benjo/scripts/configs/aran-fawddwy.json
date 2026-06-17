@@ -1,0 +1,10 @@
+{
+  "bbox": { "west": -3.78, "east": -3.65, "south": 52.76, "north": 52.82, "gridW": 200, "gridH": 160, "zoom": 14 },
+  "waypoints": [
+    { "name": "Cwm Cywarch",          "lon": -3.6792, "lat": 52.8131, "poi": true,  "type": "Start / Finish" },
+    { "name": "Aran Fawddwy",         "lon": -3.6936, "lat": 52.7847, "poi": true,  "type": "Summit" },
+    { "name": "Erw y Ddafad-ddu",     "lon": -3.6928, "lat": 52.7937, "poi": true,  "type": "Summit" },
+    { "name": "Aran Benllyn",         "lon": -3.6967, "lat": 52.8027, "poi": true,  "type": "Summit" },
+    { "name": "Cwm Cywarch",          "lon": -3.6792, "lat": 52.8131, "poi": false, "type": "Start / Finish" }
+  ]
+}

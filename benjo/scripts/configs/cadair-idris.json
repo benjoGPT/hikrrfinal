@@ -1,0 +1,10 @@
+{
+  "bbox": { "west": -3.98, "east": -3.85, "south": 52.66, "north": 52.73, "gridW": 200, "gridH": 160, "zoom": 14 },
+  "waypoints": [
+    { "name": "Minffordd",          "lon": -3.8742, "lat": 52.6967, "poi": true,  "type": "Start / Finish" },
+    { "name": "Craig Cwm Amarch",   "lon": -3.8869, "lat": 52.6939, "poi": true,  "type": "Summit" },
+    { "name": "Penygadair",         "lon": -3.9069, "lat": 52.6997, "poi": true,  "type": "Summit" },
+    { "name": "Mynydd Moel",        "lon": -3.8956, "lat": 52.7081, "poi": true,  "type": "Summit" },
+    { "name": "Minffordd",          "lon": -3.8742, "lat": 52.6967, "poi": false, "type": "Start / Finish" }
+  ]
+}
