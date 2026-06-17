@@ -1,8 +1,9 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Mountain, AlertTriangle, Route, ArrowLeft } from 'lucide-react'
+import { Mountain, AlertTriangle, Route, ArrowLeft, CloudSun } from 'lucide-react'
 import type { MountainRange } from '@/data/ranges'
 import GlassButton from './ui/GlassButton'
+import WeatherPanel from './WeatherPanel'
 
 const fadeUp = {
   initial: { opacity: 0, y: 28 },
@@ -12,6 +13,9 @@ const fadeUp = {
 }
 
 export default function RangeDetailSections({ range }: { range: MountainRange }) {
+  const centerLat = (range.mapBounds.north + range.mapBounds.south) / 2
+  const centerLon = (range.mapBounds.east + range.mapBounds.west) / 2
+
   return (
     <div className="px-5 sm:px-10 md:px-16 max-w-7xl mx-auto pb-24">
       {/* Difficulty / terrain notes */}
@@ -69,6 +73,16 @@ export default function RangeDetailSections({ range }: { range: MountainRange })
               </div>
             </div>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Weather */}
+      <motion.div {...fadeUp} className="mt-14">
+        <h2 className="font-playfair italic text-white text-2xl sm:text-3xl flex items-center gap-2">
+          <CloudSun size={22} className="text-[#e8702a]" /> Mountain weather
+        </h2>
+        <div className="mt-6">
+          <WeatherPanel lat={centerLat} lon={centerLon} elevationMetres={range.highestPeak.heightMetres} />
         </div>
       </motion.div>
 
