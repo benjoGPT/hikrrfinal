@@ -218,6 +218,20 @@
   <div class="bar"><i id="barfill"></i></div>
 </div>
 
+<script>
+setTimeout(function(){
+  if(!window.__mapRevealed){
+    var ov=document.getElementById('ov');
+    if(ov){
+      ov.innerHTML='<div style="text-align:center;color:#fff;font-family:sans-serif;padding:0 28px;max-width:320px;"><p style="opacity:.7;font-size:13px;margin-bottom:16px;line-height:1.5;">The 3D model couldn\'t load — this can happen on a slow or restricted connection.</p><button onclick="location.reload()" style="background:#e8913c;border:0;color:#1a1208;padding:10px 24px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;">Reload</button></div>';
+      ov.classList.remove('hide');
+      ov.style.display='flex';
+      ov.style.opacity='1';
+      ov.style.pointerEvents='auto';
+    }
+  }
+},14000);
+</script>
 <script type="importmap">
 { "imports": {
   "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -886,7 +900,7 @@ const bootI=setInterval(()=>{p=Math.min(100,p+14);bf.style.width=p+'%';
 // ---------- cinematic reveal — triggered once satellite imagery (the async load) settles ----------
 let revealed=false;
 function revealMap(){
-  if(revealed)return; revealed=true;
+  if(revealed)return; revealed=true; window.__mapRevealed=true;
   clearInterval(bootI); bf.style.width='100%';
   const introEls=document.querySelectorAll('.intro-fade');
 
