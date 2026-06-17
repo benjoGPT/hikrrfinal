@@ -1,0 +1,11 @@
+{
+  "bbox": { "west": -4.12, "east": -4.00, "south": 52.94, "north": 53.02, "gridW": 220, "gridH": 200, "zoom": 14 },
+  "waypoints": [
+    { "name": "Croesor",       "lon": -4.0813, "lat": 52.9847, "poi": true,  "type": "Start / Finish" },
+    { "name": "Cnicht",        "lon": -4.0772, "lat": 52.9885, "poi": true,  "type": "Summit" },
+    { "name": "Moelwyn Mawr",  "lon": -4.0625, "lat": 52.9805, "poi": true,  "type": "Summit" },
+    { "name": "Moelwyn Bach",  "lon": -4.0594, "lat": 52.9745, "poi": true,  "type": "Summit" },
+    { "name": "Allt-fawr",     "lon": -4.0508, "lat": 52.9967, "poi": true,  "type": "Summit" },
+    { "name": "Croesor",       "lon": -4.0813, "lat": 52.9847, "poi": false, "type": "Start / Finish" }
+  ]
+}
